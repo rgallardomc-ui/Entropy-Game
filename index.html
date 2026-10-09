@@ -67,7 +67,7 @@
 .hud-quest{font-size:13px;line-height:1.4;color:#f0efd6;}
 #hudPower{font:11px/1.45 'Trebuchet MS',sans-serif;max-width:100%;color:#b8f5d9;background:#14263ac9;padding:4px 7px;border-left:3px solid #8fdbb6;}
 #contextHint{font:10px/1.35 'Trebuchet MS',sans-serif;color:#f5e7bc;}
-.controller-meta{width:126px;}
+.controller-meta{width:126px;margin-bottom:18px;}
 .touch-btn.available{border-color:#ffe599;box-shadow:0 0 10px #ffdf7555;background:#937644;}
 .touch-btn.running{background:#4c9769;box-shadow:0 0 13px #8cf6bd88;}
 .touch-btn small{font-size:8px;}
@@ -80,7 +80,7 @@
 .pipe small{z-index:1;font-size:9px;background:#173549;}
 .temperature-choice .btn{min-width:130px;min-height:70px;font-size:18px;}
 @media (orientation:landscape) and (max-height:500px){.hud-quest{font-size:11px;}#hudPower{font-size:10px;padding:2px 5px;}#contextHint{font-size:9px;}.controller-meta{width:105px;gap:3px;}.controller-meta button{min-height:25px;padding:3px;}#toast{top:100px;font-size:11px;}.temperature-choice .btn{min-height:45px;font-size:14px;}}
-@media (max-width:650px) and (orientation:portrait){.hud-quest{font-size:12px;line-height:1.4;}.hud-left{max-width:66%;}.hud-right{max-width:32%;}#hudPower{font-size:12px;line-height:1.4;padding:5px;}#toast{top:160px;}#contextHint{font-size:11px;}.controller-meta{width:80px;}#aimHint{font-size:8px;bottom:157px;}.touch-btn small{font-size:8px;}}
+@media (max-width:650px) and (orientation:portrait){.hud-quest{font-size:12px;line-height:1.4;}.hud-left{max-width:66%;}.hud-right{max-width:32%;}#hudPower{font-size:12px;line-height:1.4;padding:5px;}#toast{top:160px;}#contextHint{font-size:11px;}.controller-meta{width:80px;margin-bottom:0;}#aimHint{font-size:8px;bottom:157px;}.touch-btn small{font-size:8px;}}
 @media (max-width:355px) and (orientation:portrait){.controller-meta{width:195px;}.controller-meta #contextHint{position:absolute;top:-36px;width:100%;}.hud-quest{font-size:11px;}#hudPower{font-size:11px;}}
 
 </style>
@@ -272,6 +272,7 @@ function pressControl(name,source='direct'){
  if(dialogue){if(['act','fire','jump','power','down'].includes(name))advanceSpeech();return;}
  if(screen!=='play')return;
  if(['left','right','up','down','fire','act'].includes(name)){inputHolds.set(source+':'+name,name);syncControls();}
+ if(name==='up'||name==='down'){aim=Math.max(-.55,Math.min(1.3,aim+(name==='up'?1:-1)*.035));updateHUD();}
  if(name==='jump')jumpQueued=true;
  if(name==='fire')shoot();
  if(name==='act')action();
