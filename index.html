@@ -159,7 +159,7 @@ function selectCharacter(id){
  campaigns[save.character||'flux']=progress;
  const next=campaigns[id]||freshSave();
  for(const key of ['unlocked','current','completed','xp','gear','runs','lensUnlocked','mountainStar'])save[key]=next[key]??(key==='mountainStar'?false:freshSave()[key]);
- save.character=id;save.characterChosen=true;save.campaigns=campaigns;level=save.current;stage={};player={};activeRun=false;dialogue=null;clearControls();store();showMenu();
+ save.character=id;save.characterChosen=true;save.campaigns=campaigns;level=save.current;equipped=Math.min(save.gear,availablePowerIndex());powerTime=0;powerCooldown=0;stage={};player={};activeRun=false;dialogue=null;clearControls();store();showMenu();
 }
 function characterDialogue(lines){return lines.map(([speaker,text,scene],i)=>[speaker.startsWith('FLUX')?character().speaker+(speaker.includes('THOUGHT')?' · THOUGHT':''):speaker,text===lensOpening[0][1]?character().origin:text.replace(/\bFlux\b/g,character().name),scene]);}
 function readSave(){try{const j=JSON.parse(localStorage.getItem(STORAGE));if(!j||typeof j!=='object')return freshSave();const s={...freshSave(),...j};s.unlocked=Math.max(0,Math.min(6,Number(j.unlocked)||0));s.current=Math.max(0,Math.min(s.unlocked,Number(j.current)||0));s.completed=Array.isArray(j.completed)?[...new Set(j.completed.filter(x=>Number.isInteger(x)&&x>=0&&x<7))]:[];s.gear=Math.max(0,Math.min(5,Number(j.gear)||0));s.runs=j.version===2&&j.runs&&typeof j.runs==='object'?j.runs:{};s.character=characters[j.character]?j.character:'flux';s.campaigns=j.campaigns&&typeof j.campaigns==='object'&&!Array.isArray(j.campaigns)?j.campaigns:{};s.version=2;return s;}catch{return freshSave();}}
