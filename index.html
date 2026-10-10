@@ -114,7 +114,7 @@
 <div id="toast" class="hidden" role="status"></div>
 <div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small>JUMP</small></button></div></div>
 <div id="aimHint" class="hidden">↑ ↓ AIM · SPACE JUMP · J FIRE · E ACT · F POWER</div>
-<div id="tutorialTip" class="hidden" role="status"></div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.1</span>
+<div id="tutorialTip" class="hidden" role="status"></div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.2</span>
 </div></div>
 <script>
 
@@ -131,7 +131,7 @@ const levels=[
 {title:'THE HEART OF THE UNIVERSE',world:'The Final Core',badge:'🌌',suit:'#ead8ff',sky:'#30224f',hill:'#634f8d',accent:'#dcc0ff',topic:'All Laws · State Functions · Spontaneity',task:'Restore the three core modules in order, then reach the portal.',intro:[['PIP','We made it, Flux! The heart of the universe is right here.'],['FLUX','Three broken modules. One final chance.'],['PIP','Energy, entropy, and free energy... everything we learned will help us fix this!']],end:'You restored the Core by conserving energy, respecting the natural direction of heat flow, and finding favorable conditions for a reaction. Thermodynamics helps predict which changes are possible and which direction is favored—not necessarily how fast they occur.',upgrade:'Master of thermodynamics',science:'Final synthesis: First, Second, and Third Laws; q and w; state functions; spontaneity and ΔG = ΔH − TΔS.'}
 ];
 
-const VERSION='3.1';
+const VERSION='3.2',INSTRUCTIONS_VERSION='3.1';
 const STORAGE='entropy-quest-save-v1';
 const powers=[
  {id:'magnet',name:'ENERGY MAGNET',icon:'✦',color:'#fbd277',help:'Pulls nearby loose sparks and supply crystals toward you for 7 seconds.',lesson:'The magnet moves supplies; it does not create energy.'},
@@ -155,6 +155,11 @@ const characters={
  student:{name:'John',speaker:'JOHN',mode:'EASY · CURIOUS STUDENT',hearts:4,speed:.75,vent:45,grace:145,startPower:0,color:'#7acbee',story:'A curious student at the demonstration. John asks questions, follows clues, and discovers that science is something he can do—not just memorize.',origin:'I’m John. I was in class, trying to understand where energy goes. Professor Aarons invited a scientist to demonstrate his invention. I have so many questions…',help:'4 hearts · slower drones · shorter vent bursts · extra Pip hints. Start with MAGNET; new worlds unlock more powers.'},
  flux:{name:'Dr. Flux',speaker:'DR. FLUX',mode:'MEDIUM · SCIENTIST',hearts:3,speed:1,vent:64,grace:110,startPower:0,color:'#8fe4df',story:'A fictional Jamaican scientist visiting the classroom demonstration. His lab coat covers a Jamaican-flag shirt. Flux follows the evidence, tests ideas, and repairs Vale’s mistakes one experiment at a time.',origin:'I’m Dr. Flux, a scientist from Jamaica. I came to the classroom to see Vale’s demonstration. Energy can change form, but it does not disappear. His machine still has to follow that rule.',help:'3 hearts · standard hazards · normal power progression. Start with MAGNET and earn tools through the seven worlds.'},
  professor:{name:'Professor Aarons',speaker:'PROFESSOR AARONS',mode:'HARD · EXPERIENCED PROFESSOR',hearts:2,speed:1.35,vent:85,grace:80,startPower:2,color:'#d9b4f1',story:'An experienced teacher determined to bring her class home. Aarons arrives with a better-equipped field suit, but must navigate more dangerous energy routes. A fictionalized tribute, not a biography.',origin:'I’m Professor Aarons. My students were here a moment ago. Vale’s demonstration has gone terribly wrong. My field suit has extra tools—and I will use every lesson I know to bring my class home.',help:'2 hearts · faster drones · longer vent bursts. Start with MAGNET, BURST and SHIELD; earn ICE, BOOST and HURRY later.'}
+};
+const characterLooks={
+ student:{skin:'#f5d6be',hair:'#5b4031'},
+ flux:{skin:'#f0c9b2',hair:'#655046'},
+ professor:{skin:'#9a6849',hair:'#514a3d',highlight:'#c7b78b'}
 };
 function character(){return characters[save.character]||characters.flux;}
 function availablePowerIndex(){return Math.min(5,Math.max(save.unlocked,character().startPower));}
@@ -219,7 +224,7 @@ function readSave(){try{const j=JSON.parse(localStorage.getItem(STORAGE));if(!j|
 let save=readSave(),screen='menu',level=0,player={},last=0,ticks=0,accumulator=0,particles=[],pickups=[],projectiles=[],enemies=[],dialogue=null,dialogueTimer=0,toastTimer=0,controls={},stage={},portalHint=false,aim=0,shotTimer=0,noticeTimer=0,powerCooldown=0,powerTime=0,equipped=0,jumpQueued=false,checkpoint=90,activeRun=false;
 let audioCtx,audioMaster,musicTimer,musicBeat=0,musicWorld=-1,musicNext=0;
 function store(){try{localStorage.setItem(STORAGE,JSON.stringify(save));$('saveNotice').classList.add('hidden');}catch{$('saveNotice').textContent='Saving unavailable in this browser. Keep this tab open to retain this run.';$('saveNotice').classList.remove('hidden');}}
-function persistRun(){if(!stage.initialized||!activeRun)return;const snapshot=JSON.parse(JSON.stringify(stage));for(const p of projectiles)if(p.resource&&!p.settled&&!p.refunded)snapshot[p.resource]++;save.runs[level]={stage:snapshot,pickups:JSON.parse(JSON.stringify(pickups)),x:isGap(player.x)?checkpoint:player.x,y:player.y,checkpoint,gear:equipped,instructions:VERSION};store();}
+function persistRun(){if(!stage.initialized||!activeRun)return;const snapshot=JSON.parse(JSON.stringify(stage));for(const p of projectiles)if(p.resource&&!p.settled&&!p.refunded)snapshot[p.resource]++;save.runs[level]={stage:snapshot,pickups:JSON.parse(JSON.stringify(pickups)),x:isGap(player.x)?checkpoint:player.x,y:player.y,checkpoint,gear:equipped,instructions:INSTRUCTIONS_VERSION};store();}
 function unlockAudio(){if(!save.sound)return Promise.resolve();try{if(!audioCtx||audioCtx.state==='closed'){audioCtx=new(window.AudioContext||window.webkitAudioContext)();audioMaster=audioCtx.createGain();audioMaster.gain.value=.65;audioMaster.connect(audioCtx.destination);}const resumed=audioCtx.state==='running'?Promise.resolve():audioCtx.resume();if(!musicTimer)musicTimer=setInterval(playMusicNote,50);return resumed.catch(()=>{});}catch{return Promise.resolve();}}
 function tone(freq=600,dur=.09,type='square',vol=.06,delay=0){if(!save.sound||!audioCtx||audioCtx.state!=='running')return;try{const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+delay;o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(Math.max(.001,vol),t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(audioMaster);o.start(t);o.stop(t+dur);o.onended=()=>{o.disconnect();g.disconnect();};}catch{}}
 function beep(freq=600,dur=.09,type='square',vol=.06){tone(freq,dur,type,vol);}
@@ -282,7 +287,7 @@ function startLevel(i,fresh=false,storyEntry=''){
  enemies=i===0?[]:[{x:450,min:330,max:500,y:0,dir:1,stun:0},{x:i===4?730:800,min:i===4?650:700,max:835,y:0,dir:-1,stun:0}];
  if(i===4)enemies=[{x:668,min:645,max:686,y:0,dir:1,stun:0},{x:770,min:751,max:791,y:0,dir:-1,stun:0}];
  projectiles=[];particles=[];ticks=0;aim=0;shotTimer=0;powerTime=0;powerCooldown=0;portalHint=false;dialogue=null;save.current=i;resumeGame();persistRun();
- if(!run||fresh||run.instructions!==VERSION)say(i===0&&!stage.glassesOn?(storyEntry==='after-choice'?[lensOpening[0],...lensOpening.slice(2)]:lensOpening):levels[i].intro);else toast('CHECKPOINT RESTORED · Your objectives are intact.');
+ if(!run||fresh||run.instructions!==INSTRUCTIONS_VERSION)say(i===0&&!stage.glassesOn?(storyEntry==='after-choice'?[lensOpening[0],...lensOpening.slice(2)]:lensOpening):levels[i].intro);else toast('CHECKPOINT RESTORED · Your objectives are intact.');
 }
 function continueGame(){if(!save.characterChosen&&!Object.keys(save.runs).length&&!save.completed.length){beginClassroomPrologue('start');return;}startLevel(Math.min(save.current,save.unlocked));}
 function say(lines,onEnd){clearControls();$('tutorialTip').classList.add('hidden');dialogue={lines:characterDialogue(lines),index:0,shown:0,onEnd:onEnd||null};$('speech').classList.remove('hidden');renderSpeech();}
@@ -314,6 +319,7 @@ function drawTinyFlux(x,y,color,scale=1,dir=1,heroId=save.character,showLenses=s
  ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(dir*scale,scale);
  const r=(a,b,w,h,c)=>drawRect(a,b,w,h,c);
  const student=heroId==='student',professor=heroId==='professor',coat=student?'#7acbee':professor?'#eee5fa':'#eaf1e8';
+ const look=characterLooks[heroId]||characterLooks.flux;
  if(student){r(-18,-29,8,23,'#e8b875');r(-18,-26,3,14,'#805e4c');}
  r(-13,-29,26,25,'#23384e');r(-12,-28,24,23,coat);
  r(-7,-25,14,17,student?'#e8f4ed':professor?'#755b9c':'#159653');
@@ -321,12 +327,29 @@ function drawTinyFlux(x,y,color,scale=1,dir=1,heroId=save.character,showLenses=s
  if(professor){r(-1,-22,2,2,'#ffd76a');r(-1,-17,2,2,'#ffd76a');r(14,-10,8,11,'#b791cc');r(16,-9,4,8,'#f3dfb8');}
  r(-12,-27,4,20,student?'#559ec6':'#ffffff');r(8,-27,4,20,student?'#559ec6':'#ffffff');r(-13,-8,26,3,color);
  if(seated){r(-9,-5,20,6,'#25354d');r(5,0,6,14,'#25354d');r(5,12,10,4,'#101d30');}else{r(-9,-5,7,7,'#25354d');r(3,-5,7,7,'#25354d');r(-10,0,8,3,'#101d30');r(3,0,8,3,'#101d30');}
- r(-17,-25,5,17,coat);r(12,-25,5,17,coat);r(-17,-10,5,5,'#a96c47');r(12,-10,5,5,'#a96c47');
- r(-10,-43,20,17,'#a96c47');r(-12,-43,24,6,'#28252c');r(-9,-46,5,5,'#28252c');r(-2,-47,6,5,'#28252c');r(6,-45,5,5,'#28252c');
- if(professor){r(-14,-44,6,20,'#28252c');r(9,-43,5,18,'#28252c');r(-14,-49,8,8,'#28252c');r(-10,-30,2,3,'#ffde79');r(9,-30,2,3,'#ffde79');}
+ r(-17,-25,5,17,coat);r(12,-25,5,17,coat);r(-17,-10,5,5,look.skin);r(12,-10,5,5,look.skin);
+ r(-10,-43,20,17,look.skin);
+ if(professor){
+  // Short close sides and a textured, swept-up highlighted top, inspired
+  // by the supplied reference. The photograph is not a game asset.
+  r(-12,-44,24,6,look.hair);r(-12,-39,3,7,look.hair);r(9,-39,3,7,look.hair);
+  r(-10,-51,20,8,'#827251');r(-13,-49,5,8,'#98855b');r(-8,-55,8,6,'#9e8b5e');r(0,-57,7,8,'#b3a072');r(6,-52,5,9,'#827251');
+  r(-9,-48,6,4,'#beae7e');r(-2,-52,6,6,look.highlight);r(3,-47,6,5,'#b8a36b');r(-6,-58,3,5,'#bca675');r(2,-61,2,5,'#a68f63');r(9,-56,2,4,'#b3a072');
+  r(-10,-30,2,3,'#ffde79');r(9,-30,2,3,'#ffde79');
+ }else{
+  r(-12,-43,24,6,look.hair);
+  if(student){r(-10,-46,19,5,look.hair);r(-11,-39,3,7,look.hair);}
+  else{r(-9,-46,5,5,look.hair);r(-2,-47,6,5,look.hair);r(6,-45,5,5,look.hair);}
+ }
  r(-6,-34,3,3,'#172c40');r(4,-34,3,3,'#172c40');r(1,-29,5,2,'#efd3b2');
+ if(professor)drawProfessorGlasses();
  if(showLenses)drawThermoGlasses(0,-33,1);
  r(9,-22,3,6,color);r(10,-23,2,2,'#ffdc82');ctx.restore();
+}
+function drawProfessorGlasses(){
+ ctx.strokeStyle='#17212c';ctx.lineWidth=2;
+ ctx.strokeRect(-11,-38,11,10);ctx.strokeRect(2,-38,11,10);
+ ctx.beginPath();ctx.moveTo(0,-35);ctx.lineTo(2,-35);ctx.stroke();
 }
 function drawThermoGlasses(x,y,scale=1){
  ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.strokeStyle='#ffe28a';ctx.lineWidth=2;
@@ -437,7 +460,7 @@ function drawStoryScene(scene){
  drawTinyFlux(180,435,characters.student.color,2,1,'student',false,true);
  for(const x of [85,310]){drawRect(x,420,180,13,'#a88765');drawRect(x+15,433,10,62,'#716b66');drawRect(x+153,433,10,62,'#716b66');}
  drawRect(188,404,36,14,'#f5ebce');drawRect(194,408,22,2,'#7ba1a2');
- drawTinyFlux(420,350,characters.professor.color,2.2,1,'professor',false);drawRect(456,284,25,5,'#eee5fa');drawRect(478,281,5,7,'#a96c47');drawRect(482,280,5,3,'#f5ebce');
+ drawTinyFlux(420,350,characters.professor.color,2.2,1,'professor',false);drawRect(456,284,25,5,'#eee5fa');drawRect(478,281,5,7,characterLooks.professor.skin);drawRect(482,280,5,3,'#f5ebce');
  drawRect(597,345,136,10,'#a88765');drawRect(609,355,8,50,'#716b66');drawRect(713,355,8,50,'#716b66');
  drawTinyFlux(660,350,characters.flux.color,2.2,1,'flux',false);drawRect(694,318,17,13,'#9edbcb');drawRect(701,307,3,13,'#8dbed2');
  drawVale(860,355,1.8);drawText('DR. VALE',860,380,11,'#d9c3f7');
