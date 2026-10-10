@@ -104,17 +104,76 @@
 @media(max-width:650px) and (orientation:portrait){.classroom-caption{top:10px;max-height:30%;padding:10px}.classroom-caption p{font-size:13px}.cast-choice{width:25%;font-size:11px;padding:7px 3px;min-height:64px}.cast-choice span{font-size:9px}}
 @media(max-height:500px) and (orientation:landscape){.classroom-caption{top:5px;padding:6px 10px;max-height:36%}.classroom-caption p{font-size:12px;margin-bottom:4px}.classroom-caption .btn{min-height:30px;padding:4px 8px}.cast-choice{min-height:45px;font-size:11px;padding:4px}.cast-choice span{font-size:9px}}
 </style>
+<style>
+/* Give guidance, the entire world, and the controller their own real space. */
+#briefing,#controllerDock{display:contents}#worldView{position:absolute;inset:0}
+#gameFrame.field-layout{display:flex;flex-direction:column;aspect-ratio:auto;height:min(880px,calc(100dvh - 24px));min-height:0;max-height:none}
+.field-layout #briefing{display:flex;order:0;flex-direction:column;flex:0 0 auto;max-height:44%;min-height:0;overflow-y:auto;background:#101d33;border-bottom:2px solid #486980}
+.field-layout #hud{position:relative;inset:auto;flex:none;padding:8px 10px;gap:6px}
+.field-layout #guidanceDock{position:relative;flex:none;height:76px;margin:0 10px 8px}
+.field-layout #speech,.field-layout #tutorialTip,.field-layout #toast{position:absolute;inset:0;transform:none;width:100%;max-width:none;max-height:100%;min-height:0;height:100%;margin:0;overflow-y:auto;box-shadow:none}
+.field-layout #speech{padding:9px 12px;border-width:2px;gap:9px;cursor:pointer}
+.field-layout #speech::before{display:none}.field-layout #speechText{font-size:14px;line-height:1.4;min-height:0}
+.field-layout #speechFace{flex-basis:32px;height:32px;font-size:20px}
+.field-layout #tutorialTip{font:12px/1.45 'Trebuchet MS',Verdana,sans-serif;padding:8px 10px;pointer-events:auto}
+.field-layout #toast{z-index:8;display:flex;align-items:center;justify-content:center;font-size:12px;padding:8px 10px}
+.field-layout.has-dialogue #guidanceDock{height:clamp(130px,21dvh,180px)}
+.field-layout.has-dialogue #hudPower,.field-layout.has-dialogue .hud-quest{display:none}
+.field-layout #worldView{position:relative;order:1;inset:auto;flex:1 1 0;min-height:0;overflow:hidden;background:#142139}
+.field-layout #gameCanvas{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:var(--world-width,100%);height:var(--world-height,auto)}
+.field-layout #controllerDock{display:block;order:2;position:relative;flex:0 0 auto;background:#101d33;border-top:2px solid #486980;padding:7px 0 14px}
+.field-layout #controls{position:relative;inset:auto;padding:4px 14px 0}
+.field-layout #aimHint{position:static;transform:none;white-space:normal;text-align:center;font-size:10px;margin:0 8px 3px}
+.field-layout .controller-meta{margin:0}.field-layout #contextHint{display:none}
+.field-layout #soundBtn{min-width:64px;font-size:11px;white-space:nowrap}
+.field-layout #soundBtn.audio-needed{border-color:#ffe49c;color:#ffe49c}
+.field-layout.classroom-mode #briefing{height:clamp(150px,28dvh,220px);max-height:none;overflow:visible;border:0}
+.field-layout.classroom-mode #guidanceDock{display:none}
+.field-layout.classroom-mode #controllerDock{height:90px;border:0}
+.classroom-mode .classroom-caption{top:8px;max-height:calc(clamp(150px,28dvh,220px) - 16px)}
+.cast-choices{position:absolute;left:8px;right:8px;bottom:8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.cast-choices .cast-choice{position:static;transform:none;width:auto;min-height:72px}
+@media(max-width:650px) and (orientation:portrait){
+ #shell{padding:8px 4px}.field-layout #hud{padding:5px 7px;gap:5px}
+ .field-layout .hud-right{order:0;max-width:none;width:100%;flex-wrap:nowrap;justify-content:space-between;gap:4px}
+ .field-layout .hud-left{order:1;flex-basis:100%;max-width:none;padding:5px 7px}
+ .field-layout #hudPower{order:2;font-size:11px;line-height:1.35;padding:4px 6px}
+ .field-layout .hud-button{min-height:40px;font-size:10px;padding:5px 8px}.field-layout .hud-pill{font-size:11px;padding:5px}
+ .field-layout .hud-title{font-size:11px}.field-layout .hud-quest{font-size:12px;line-height:1.35}
+ .field-layout #guidanceDock{margin:0 7px 7px;height:78px}
+ .field-layout #speechText{font-size:13px;line-height:1.4}.field-layout #speechSpeaker{font-size:11px}.field-layout #speechNext{font-size:10px}
+ .field-layout #controls{padding:4px 9px 0}.field-layout #controllerDock{padding-bottom:12px}
+ .field-layout #aimHint{font-size:9px}.field-layout .controller-meta{position:static;transform:none;bottom:auto;width:80px;flex-direction:column;gap:7px}
+ .field-layout .controller-meta button{flex:none;font-size:10px;min-height:40px}
+ .field-layout.classroom-mode #controllerDock{height:88px}
+ .classroom-mode .classroom-caption p{font-size:13px;line-height:1.4}
+ .cast-choices .cast-choice{font-size:11px;padding:6px 3px;min-height:70px}
+}
+@media(max-height:500px) and (orientation:landscape){
+ #gameFrame.field-layout{width:min(100%,1100px);height:calc(100dvh - 14px)}
+ .field-layout #briefing{max-height:42%}.field-layout #hud{padding:3px 6px}
+ .field-layout #guidanceDock{height:48px;margin:0 6px 4px}.field-layout.has-dialogue #guidanceDock{height:100px}
+ .field-layout #speechText{font-size:12px;line-height:1.35}.field-layout #speech{padding:5px 8px}
+ .field-layout #controllerDock{padding:3px 0 8px}.field-layout #controls{padding:0 8px}.field-layout #aimHint{font-size:8px}
+ .field-layout.classroom-mode #briefing{height:125px;max-height:none}.classroom-mode .classroom-caption{max-height:113px}
+ .field-layout.classroom-mode #controllerDock{height:62px}.cast-choices .cast-choice{min-height:46px;padding:3px;font-size:11px}
+}
+</style>
 </head>
 <body>
 <div id="shell"><div id="gameFrame">
-<canvas id="gameCanvas" width="960" height="540" aria-label="Entropy Quest game world"></canvas>
+<div id="worldView"><canvas id="gameCanvas" width="960" height="540" aria-label="Entropy Quest game world"></canvas></div>
+<div id="briefing">
 <div id="hud" class="hidden"><div class="hud-left"><div class="hud-title" id="hudTitle"></div><div class="hud-quest" id="hudQuest"></div></div><div class="hud-right"><span class="hud-pill" id="hudXP"></span><button class="hud-button" id="soundBtn" aria-label="Mute sound">🔊</button><button class="hud-button" id="whyBtn" aria-label="Explain this world's science">💡 WHY</button><button class="hud-button" id="journalBtn" aria-label="Open science journal">▤</button><button class="hud-button" id="pauseBtn" aria-label="Pause game">☰ MENU</button></div><div id="hudPower"></div></div>
-<div id="overlay"></div>
+<div id="guidanceDock">
 <div id="speech" class="hidden" role="dialog" aria-label="Character dialogue"><div id="speechFace">✦</div><div id="speechBody"><div id="speechSpeaker">PIP</div><div id="speechText"></div><div id="speechNext">TAP TO CONTINUE ▾</div></div></div>
 <div id="toast" class="hidden" role="status"></div>
+<div id="tutorialTip" class="hidden" role="status"></div></div></div>
+<div id="overlay"></div>
+<div id="controllerDock">
 <div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small>JUMP</small></button></div></div>
 <div id="aimHint" class="hidden">↑ ↓ AIM · SPACE JUMP · J FIRE · E ACT · F POWER</div>
-<div id="tutorialTip" class="hidden" role="status"></div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.2</span>
+</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.3</span>
 </div></div>
 <script>
 
@@ -131,7 +190,7 @@ const levels=[
 {title:'THE HEART OF THE UNIVERSE',world:'The Final Core',badge:'🌌',suit:'#ead8ff',sky:'#30224f',hill:'#634f8d',accent:'#dcc0ff',topic:'All Laws · State Functions · Spontaneity',task:'Restore the three core modules in order, then reach the portal.',intro:[['PIP','We made it, Flux! The heart of the universe is right here.'],['FLUX','Three broken modules. One final chance.'],['PIP','Energy, entropy, and free energy... everything we learned will help us fix this!']],end:'You restored the Core by conserving energy, respecting the natural direction of heat flow, and finding favorable conditions for a reaction. Thermodynamics helps predict which changes are possible and which direction is favored—not necessarily how fast they occur.',upgrade:'Master of thermodynamics',science:'Final synthesis: First, Second, and Third Laws; q and w; state functions; spontaneity and ΔG = ΔH − TΔS.'}
 ];
 
-const VERSION='3.2',INSTRUCTIONS_VERSION='3.1';
+const VERSION='3.3',INSTRUCTIONS_VERSION='3.1';
 const STORAGE='entropy-quest-save-v1';
 const powers=[
  {id:'magnet',name:'ENERGY MAGNET',icon:'✦',color:'#fbd277',help:'Pulls nearby loose sparks and supply crystals toward you for 7 seconds.',lesson:'The magnet moves supplies; it does not create energy.'},
@@ -183,13 +242,12 @@ function showClassroomPrologue(){
  screen='prologue';const choosing=classroomPage>=classroomIntro.length;
  const [speaker,text]=choosing?['WHO WILL YOU BE?','The Engine is about to change the world. Tap a character or their name to live the adventure through their eyes. Your choice changes the thoughts, challenge and classroom ending.']:classroomIntro[classroomPage];
  panel('');$('overlay').classList.add('classroom-overlay');
- $('overlay').innerHTML=`<section class="classroom-caption" aria-label="Classroom prologue"><h3>${speaker}</h3><p>${text}</p>${choosing?'<details><summary>Compare powers and difficulty</summary>'+Object.values(characters).map(c=>`<p><strong>${c.name}</strong> — ${c.help}</p>`).join('')+'<p class="small">Each character has a separate saved adventure. Picking a returning hero resumes their checkpoint; it never overwrites another hero.</p></details>':''}<div class="back-row"><button class="btn secondary" data-act="menu">← MENU</button>${choosing?'<span class="small">Tap a hero below · keyboard 1 / 2 / 3</span>':`<button class="btn gold" data-act="classroomNext">${classroomPage===classroomIntro.length-1?'CHOOSE YOUR PART →':'NEXT →'}</button>`}</div></section>${choosing?classroomCast.map(c=>`<button class="cast-choice" data-prologue-character="${c.id}" data-cast="${c.id}" aria-label="Play as ${characters[c.id].name}, ${characters[c.id].mode}"><strong>${characters[c.id].name}</strong><span>${c.role}</span><span>${c.id==='student'?'1':c.id==='flux'?'2':'3'} · TAP TO CHOOSE</span></button>`).join(''):''}`;
+ $('overlay').innerHTML=`<section class="classroom-caption" aria-label="Classroom prologue"><h3>${speaker}</h3><p>${text}</p>${choosing?'<details><summary>Compare powers and difficulty</summary>'+Object.values(characters).map(c=>`<p><strong>${c.name}</strong> — ${c.help}</p>`).join('')+'<p class="small">Each character has a separate saved adventure. Picking a returning hero resumes their checkpoint; it never overwrites another hero.</p></details>':''}<div class="back-row"><button class="btn secondary" data-act="menu">← MENU</button>${choosing?'<span class="small">Tap a hero below · keyboard 1 / 2 / 3</span>':`<button class="btn gold" data-act="classroomNext">${classroomPage===classroomIntro.length-1?'CHOOSE YOUR PART →':'NEXT →'}</button>`}</div></section>${choosing?'<div class="cast-choices">'+classroomCast.map(c=>`<button class="cast-choice" data-prologue-character="${c.id}" data-cast="${c.id}" aria-label="Play as ${characters[c.id].name}, ${characters[c.id].mode}"><strong>${characters[c.id].name}</strong><span>${c.role}</span><span>${c.id==='student'?'1':c.id==='flux'?'2':'3'} · TAP TO CHOOSE</span></button>`).join('')+'</div>':''}`;
  positionClassroomChoices();
 }
 function advanceClassroomPrologue(){if(screen!=='prologue'||classroomPage>=classroomIntro.length)return;classroomPage++;showClassroomPrologue();}
 function positionClassroomChoices(){
- if(!canvas.getBoundingClientRect||!$('gameFrame').getBoundingClientRect)return;const box=canvas.getBoundingClientRect(),frame=$('gameFrame').getBoundingClientRect();
- for(const button of document.querySelectorAll('[data-cast]')){const c=classroomCast.find(c=>c.id===button.dataset.cast);if(!c)continue;button.style.left=(box.left-frame.left+c.x*box.width/960)+'px';button.style.top=(box.top-frame.top+(c.y+23)*box.height/540)+'px';}
+ positionGuidance();
 }
 function choosePrologueHero(id){
  if(screen!=='prologue'||classroomPage<classroomIntro.length||!characters[id])return;
@@ -215,18 +273,46 @@ function characterDialogue(lines){return lines.map(([speaker,text,scene])=>{
  return [hero?character().speaker+(speaker.includes('THOUGHT')?' · THOUGHT':''):speaker,voiced.replace(/\b(?:Dr\. )?Flux\b/g,character().name),scene];
 });}
 function positionGuidance(){
- const hud=$('hud'),frame=$('gameFrame');
- if(!hud.getBoundingClientRect||!frame.style?.setProperty)return;
- const h=hud.getBoundingClientRect(),f=frame.getBoundingClientRect();
- if(h.height>0)frame.style.setProperty('--guide-top',Math.ceil(h.bottom-f.top+8)+'px');
+ const frame=$('gameFrame'),view=$('worldView'),field=screen==='play'||screen==='prologue';
+ frame.classList.toggle('field-layout',field);
+ frame.classList.toggle('has-dialogue',screen==='play'&&!!dialogue);
+ frame.classList.toggle('classroom-mode',screen==='prologue'&&$('overlay').classList.contains('classroom-overlay'));
+ if(!field||!view.getBoundingClientRect||!frame.style?.setProperty)return;
+ const box=view.getBoundingClientRect();if(box.width<=0||box.height<=0)return;
+ const width=Math.floor(Math.min(box.width,box.height*16/9)),height=width*9/16,key=width+':'+height;
+ if(canvas.dataset.fit===key)return;canvas.dataset.fit=key;
+ frame.style.setProperty('--world-width',width+'px');frame.style.setProperty('--world-height',height+'px');
 }
 function readSave(){try{const j=JSON.parse(localStorage.getItem(STORAGE));if(!j||typeof j!=='object')return freshSave();const s={...freshSave(),...j};s.unlocked=Math.max(0,Math.min(6,Number(j.unlocked)||0));s.current=Math.max(0,Math.min(s.unlocked,Number(j.current)||0));s.completed=Array.isArray(j.completed)?[...new Set(j.completed.filter(x=>Number.isInteger(x)&&x>=0&&x<7))]:[];s.gear=Math.max(0,Math.min(5,Number(j.gear)||0));s.runs=j.version===2&&j.runs&&typeof j.runs==='object'?j.runs:{};s.character=characters[j.character]?j.character:'flux';s.campaigns=j.campaigns&&typeof j.campaigns==='object'&&!Array.isArray(j.campaigns)?j.campaigns:{};s.version=2;return s;}catch{return freshSave();}}
 let save=readSave(),screen='menu',level=0,player={},last=0,ticks=0,accumulator=0,particles=[],pickups=[],projectiles=[],enemies=[],dialogue=null,dialogueTimer=0,toastTimer=0,controls={},stage={},portalHint=false,aim=0,shotTimer=0,noticeTimer=0,powerCooldown=0,powerTime=0,equipped=0,jumpQueued=false,checkpoint=90,activeRun=false;
 let audioCtx,audioMaster,musicTimer,musicBeat=0,musicWorld=-1,musicNext=0;
+const audioNotes=new Set();
 function store(){try{localStorage.setItem(STORAGE,JSON.stringify(save));$('saveNotice').classList.add('hidden');}catch{$('saveNotice').textContent='Saving unavailable in this browser. Keep this tab open to retain this run.';$('saveNotice').classList.remove('hidden');}}
 function persistRun(){if(!stage.initialized||!activeRun)return;const snapshot=JSON.parse(JSON.stringify(stage));for(const p of projectiles)if(p.resource&&!p.settled&&!p.refunded)snapshot[p.resource]++;save.runs[level]={stage:snapshot,pickups:JSON.parse(JSON.stringify(pickups)),x:isGap(player.x)?checkpoint:player.x,y:player.y,checkpoint,gear:equipped,instructions:INSTRUCTIONS_VERSION};store();}
-function unlockAudio(){if(!save.sound)return Promise.resolve();try{if(!audioCtx||audioCtx.state==='closed'){audioCtx=new(window.AudioContext||window.webkitAudioContext)();audioMaster=audioCtx.createGain();audioMaster.gain.value=.65;audioMaster.connect(audioCtx.destination);}const resumed=audioCtx.state==='running'?Promise.resolve():audioCtx.resume();if(!musicTimer)musicTimer=setInterval(playMusicNote,50);return resumed.catch(()=>{});}catch{return Promise.resolve();}}
-function tone(freq=600,dur=.09,type='square',vol=.06,delay=0){if(!save.sound||!audioCtx||audioCtx.state!=='running')return;try{const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+delay;o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(Math.max(.001,vol),t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(audioMaster);o.start(t);o.stop(t+dur);o.onended=()=>{o.disconnect();g.disconnect();};}catch{}}
+function stopAudioNotes(){for(const o of audioNotes)try{o.stop();}catch{}audioNotes.clear();musicWorld=-1;musicNext=0;}
+function unlockAudio(fromGesture=true,rebuild=false){
+ if(!save.sound||document.hidden){updateSoundLabel();return Promise.resolve(false);}
+ try{
+  // AudioSession is optional. Never request a microphone or other permission.
+  if(save.music&&navigator.audioSession)try{navigator.audioSession.type='playback';}catch{}
+  if(rebuild&&fromGesture&&audioCtx){stopAudioNotes();try{audioCtx.close().catch(()=>{});}catch{}audioCtx=null;}
+  if(!audioCtx||audioCtx.state==='closed'){
+   if(!fromGesture){updateSoundLabel();return Promise.resolve(false);}
+   const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio){updateSoundLabel();return Promise.resolve(false);}
+   audioCtx=new Audio();audioMaster=audioCtx.createGain();audioMaster.gain.value=.8;audioMaster.connect(audioCtx.destination);
+   const context=audioCtx;context.onstatechange=()=>{if(context!==audioCtx)return;if(context.state!=='running'){musicWorld=-1;musicNext=0;}updateSoundLabel();};
+  }
+  const context=audioCtx,resumed=context.state==='running'?Promise.resolve():context.resume();
+  if(!musicTimer)musicTimer=setInterval(playMusicNote,50);
+  return Promise.resolve(resumed).then(()=>{
+   if(context!==audioCtx)return false;
+   const ready=context.state==='running'&&save.sound&&!document.hidden;
+   if(ready){audioMaster.gain.value=.8;playMusicNote();}updateSoundLabel();return ready;
+  }).catch(()=>{updateSoundLabel();return false;});
+ }catch{updateSoundLabel();return Promise.resolve(false);}
+}
+function suspendAudio(){stopAudioNotes();if(audioMaster)audioMaster.gain.value=0;if(audioCtx?.state==='running')try{audioCtx.suspend().catch(()=>{});}catch{}updateSoundLabel();}
+function tone(freq=600,dur=.09,type='square',vol=.06,delay=0){if(!save.sound||!audioCtx||audioCtx.state!=='running'||document.hidden)return;try{const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+delay;o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(Math.max(.001,vol),t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(audioMaster);audioNotes.add(o);o.start(t);o.stop(t+dur);o.onended=()=>{audioNotes.delete(o);o.disconnect();g.disconnect();};}catch{}}
 function beep(freq=600,dur=.09,type='square',vol=.06){tone(freq,dur,type,vol);}
 // Original synthesized themes: no downloads, and music never controls gameplay speed.
 const musicThemes=[
@@ -241,24 +327,37 @@ const musicThemes=[
 const prologueTheme={name:'Before the lenses',bpm:72,wave:'sine',notes:[220,0,0,261.63,0,246.94,0,0,196,0,220,0,0,246.94,0,0],bass:[110,98,130.81,123.47],drive:0};
 function currentMusicTheme(){return screen==='prologue'||level===0&&!stage.glassesOn?prologueTheme:musicThemes[level];}
 function playMusicNote(){
- if(!save.music||!save.sound||document.hidden||(screen!=='play'&&screen!=='prologue')||dialogue&&!dialogue.lines[dialogue.index][2]||!audioCtx||audioCtx.state!=='running'){musicWorld=-1;musicNext=0;return;}
+ if(!save.music||!save.sound||document.hidden||(screen!=='play'&&screen!=='prologue')||!audioCtx||audioCtx.state!=='running'){musicWorld=-1;musicNext=0;return;}
  const theme=currentMusicTheme(),key=theme===prologueTheme?-2:level,now=audioCtx.currentTime,step=30/theme.bpm;
  if(musicWorld!==key||musicNext<now-.25){musicWorld=key;musicBeat=0;musicNext=now+.01;}
  for(let count=0;count<2&&musicNext<=now+.08;count++){
   const beat=musicBeat++,delay=Math.max(0,musicNext-now),n=theme.notes[beat%theme.notes.length];
-  if(n)tone(n,step*.78,theme.wave,theme.wave==='square'?.018:.035,delay);
-  if(beat%4===0)tone(theme.bass[Math.floor(beat/16)%4],step*1.7,'sine',.025,delay);
-  if(theme.drive&&beat%2===0)tone(beat%4===0?65:90,.065,'triangle',.012+theme.drive*.003,delay);
+  const quiet=dialogue?.72:1;
+  if(n)tone(n,step*.78,theme.wave,(theme.wave==='square'?.035:.065)*quiet,delay);
+  if(beat%4===0)tone(theme.bass[Math.floor(beat/16)%4],step*1.7,'sine',.045*quiet,delay);
+  if(theme.drive&&beat%2===0)tone(beat%4===0?65:90,.065,'triangle',(.016+theme.drive*.004)*quiet,delay);
   musicNext+=step;
  }
 }
-function toggleSound(){save.sound=!save.sound;store();if(save.sound)unlockAudio().then(()=>beep(740,.2));updateSoundLabel();}
-function updateSoundLabel(){if($('soundBtn')){$('soundBtn').textContent=save.sound?'🔊':'🔇';$('soundBtn').setAttribute('aria-label',save.sound?'Mute sound':'Enable sound');}}
-function panel(html){$('overlay').classList.remove('classroom-overlay');clearControls();$('tutorialTip').classList.add('hidden');$('overlay').innerHTML='<div class="panel">'+html+'</div>';$('overlay').classList.remove('hidden');$('hud').classList.add('hidden');$('controls').classList.add('hidden');$('speech').classList.add('hidden');$('toast').classList.add('hidden');$('aimHint').classList.add('hidden');}
+function toggleSound(){save.sound=!save.sound;store();if(save.sound)unlockAudio().then(()=>beep(740,.2));else suspendAudio();updateSoundLabel();}
+function handleAudioButton(){
+ if($('soundBtn').dataset.audioAction==='mute'){toggleSound();return;}
+ save.sound=true;save.music=true;store();unlockAudio(true,!!audioCtx&&audioCtx.state!=='running').then(()=>beep(740,.15));updateSoundLabel();
+}
+function updateSoundLabel(){
+ const b=$('soundBtn');if(!b)return;
+ const ready=audioCtx?.state==='running',on=save.sound&&save.music&&ready;
+ b.textContent=on?'♪ ON':!save.sound?'♪ OFF':!save.music?'♪ OFF':'♪ TAP';
+ b.setAttribute('aria-label',on?'Mute music and sound':!save.sound||!save.music?'Enable music and sound':'Tap to resume music and sound');
+ b.dataset.audioAction=on?'mute':'start';b.dataset.audioState=audioCtx?.state||'not-started';
+ b.title=on?'Music: '+currentMusicTheme().name:'Tap to start or restore music';
+ b.classList.toggle('audio-needed',!on);
+}
+function panel(html){$('overlay').classList.remove('classroom-overlay');clearControls();$('tutorialTip').classList.add('hidden');$('overlay').innerHTML='<div class="panel">'+html+'</div>';$('overlay').classList.remove('hidden');$('hud').classList.add('hidden');$('controls').classList.add('hidden');$('speech').classList.add('hidden');$('toast').classList.add('hidden');$('aimHint').classList.add('hidden');positionGuidance();}
 function showMenu(){if(screen==='play')persistRun();screen='menu';dialogue=null;panel(`<div class="eyebrow">✦ A LITTLE UNIVERSE WITH BIG RULES ✦</div><div class="logo">ENTROPY<br>QUEST</div><div class="lead">Aim. Jump. Explore.<br>See the hidden world through a scientist’s lenses.</div><div class="menu-buttons"><button class="btn primary gold" data-act="continue">▶ ${Object.keys(save.runs).length||save.completed.length?'CONTINUE ADVENTURE':'START ADVENTURE'}</button><button class="btn secondary" data-act="characters">👤 ${character().name} · ${save.character==='student'?'EASY':save.character==='professor'?'HARD':'MEDIUM'}</button><button class="btn secondary" data-act="map">⌘ WORLD MAP</button><button class="btn secondary" data-act="journal">▤ SCIENCE JOURNAL</button><button class="btn secondary" data-act="gear">✦ SUIT POWERS</button><button class="btn secondary" data-act="settings">⚙ SETTINGS & SOUND</button><button class="btn secondary" data-act="storyIntro">👓 CLASSROOM PROLOGUE</button><button class="btn secondary" data-act="about">✧ STORY & CONTROLS</button><button class="btn secondary" data-act="new">↺ NEW GAME</button></div><p class="small">Adventure v${VERSION} · No science experience needed · Progress auto-saves</p>`);}
 function showMap(){if(screen==='play')persistRun();screen='map';dialogue=null;const cards=levels.map((l,i)=>`<button class="level-tile ${i>save.unlocked?'locked':save.completed.includes(i)?'done':'active'}" ${i>save.unlocked?'disabled':''} data-level="${i}"><span class="emoji">${i<=save.unlocked?l.badge:'🔒'}</span><strong>${i+1}. ${l.title}</strong><span>★ ${powerLabels[powerAdvice[i].gear]}</span><span>${save.completed.includes(i)?'✓ COMPLETE':save.runs[i]?'↪ CHECKPOINT':i<=save.unlocked?'▶ READY':'LOCKED'}</span></button>`).join('');panel(`<div class="eyebrow">✦ SEVEN WORLDS. SEVEN WAYS TO THINK. ✦</div><div class="logo" style="font-size:30px">WORLD MAP</div><p class="lead">Each chapter unlocks the next power and reveals a lens clue. Your earlier saves still count.</p><div class="map-grid">${cards}</div><span class="stat">✦ ${save.xp} XP</span><span class="stat">✓ ${save.completed.length}/7 WORLDS</span><div class="back-row"><button class="btn secondary" data-act="menu">← MAIN MENU</button><button class="btn gold" data-act="continue">▶ CONTINUE</button></div>`);}
 function showAbout(){screen='about';panel(`<div class="eyebrow">✦ A TINY STORY ABOUT A MASSIVE UNIVERSE ✦</div><div class="logo" style="font-size:32px">FLUX & PIP</div><div class="info"><h3>Meet ${character().name}</h3><p>${character().story}</p><p>These are fictional game heroes. Professor Aarons is a tribute inspired by your teacher, not a claim about her life or likeness.</p><h3>Pick your approach</h3><p>John is the curious student (easy). Dr. Flux is the Jamaican assistant scientist (medium). Professor Aarons is the experienced teacher (hard). Meet all three during the classroom prologue, then choose just before the world changes. Each has a different field outfit, opening thoughts, classroom ending and separate saved progress.</p><h3>The Thermo-Lenses</h3><p>Visiting scientist Dr. Vale demonstrates his Boundary Engine in Professor Aarons’ classroom. It redirects energy between connected places, but the transfers go wrong and alter the world. Vale powers a doorway to escape and drops his glasses from his lab coat. Pip helps ${character().name} retrieve them with MAGNET. X WEAR reveals the hidden paths. The portal and lenses are fictional technology; moving energy still needs a source.</p><h3>Seven worlds. One secret.</h3><p>Follow Vale’s trail through seven worlds, repairing the damage his Engine left behind. Discover why he is trapped at the Heart, help him restore safe energy routes, and bring everyone back to the classroom. Each level reveals a clue in the journal. No formulas are needed to play.</p><h3>Touch controller</h3><p>D-pad ← → moves. ↑ ↓ aims. A jumps, B fires, X uses nearby objects and changes its label to FIX, COOL, PUSH or SETUP. Y activates your power. The middle button switches WARM / PUSH shots in world 1. Tap POWER INFO to see what your power does or choose another unlocked power.</p><h3>Computer</h3><p>← → or A/D move · ↑ ↓ aim · SPACE/W jump · J fire · E interact · F power · Q switch tool · R gear · ESC pause.</p><h3>Explore without losing your work</h3><p>Aim your blaster to stun drones, or jump past them. Shots refill freely while you explore. If you fall or lose all hearts, Pip returns you to a checkpoint with your objectives intact.</p><p>Your suit powers are fictional tools. Thermodynamic signs and conditions follow the lessons; energy packets represent transfers, not literal heat particles.</p></div><div class="back-row"><button class="btn secondary" data-act="menu">← BACK</button><button class="btn gold" data-act="continue">▶ PLAY</button></div>`);}
-function showSettings(){screen='settings';panel(`<div class="eyebrow">✦ PLAYER OPTIONS ✦</div><div class="logo" style="font-size:30px">SETTINGS</div><div class="back-row"><button class="btn" data-act="sound">${save.sound?'🔊 MUTE':'🔈 ENABLE'} SOUND</button><button class="btn gold" data-act="testSound">♪ TEST SOUND</button><button class="btn secondary" data-act="music">MUSIC: ${save.music?'ON':'OFF'}</button><button class="btn secondary" data-act="bindings">REMOTE / GAMEPAD</button><button class="btn secondary" data-act="controller">CONTROLLER: ${save.controller?'ON':'OFF'}</button></div><p class="small" id="audioStatus">Audio starts after a tap. If silent, enable sound, raise your volume, and check your iPhone’s silent mode.</p><p class="small">Level objectives and checkpoints save in this browser. Different devices keep separate saves.</p><div class="back-row"><button class="btn secondary" data-act="menu">← BACK</button><button class="btn secondary" data-act="reset">RESET PROGRESS</button></div>`);}
+function showSettings(){screen='settings';panel(`<div class="eyebrow">✦ PLAYER OPTIONS ✦</div><div class="logo" style="font-size:30px">SETTINGS</div><div class="back-row"><button class="btn" data-act="sound">${save.sound?'🔊 MUTE':'🔈 ENABLE'} SOUND</button><button class="btn gold" data-act="testSound">♪ TEST / RESTORE SOUND</button><button class="btn secondary" data-act="music">MUSIC: ${save.music?'ON':'OFF'}</button><button class="btn secondary" data-act="bindings">REMOTE / GAMEPAD</button><button class="btn secondary" data-act="controller">CONTROLLER: ${save.controller?'ON':'OFF'}</button></div><p class="small" id="audioStatus">Audio starts after a tap. The game’s ♪ ON / OFF / TAP button starts or restores music. If it is still silent, use TEST / RESTORE SOUND to rebuild audio, and check device volume and silent mode.</p><p class="small">Level objectives and checkpoints save in this browser. Different devices keep separate saves.</p><div class="back-row"><button class="btn secondary" data-act="menu">← BACK</button><button class="btn secondary" data-act="reset">RESET PROGRESS</button></div>`);}
 function showJournal(){const returnTo=screen==='play'||screen==='paused'?'resume':'menu';if(screen==='play')persistRun();screen='journal';panel(`<div class="eyebrow">✦ YOUR FIELD NOTES ✦</div><div class="logo" style="font-size:28px">SCIENCE JOURNAL</div><div class="info">${levels.map((l,i)=>`<h3>${l.badge} ${i+1}. ${l.title}</h3>${levelRecap(i)}${save.completed.includes(i)?storyClue(i):'<p class="small">👓 Restore this world to discover its lens clue.</p>'}<details><summary>Explore the science</summary><p>${l.science}</p>${formulaCard(i)}</details>`).join('')}<h3>Gear is help, not a loophole</h3><p>${powers.map(p=>`${p.name}: ${p.lesson}`).join(' ')}</p><h3>Spontaneous ≠ fast</h3><p>A negative ΔG favors a direction under specified conditions. It does not promise a fast reaction. A catalyst lowers the activation barrier and speeds the approach to equilibrium without changing ΔG or the equilibrium constant.</p><h3>Reversible vs. irreversible</h3><p>An ideal reversible process stays arbitrarily close to equilibrium. Real friction and heat flow across a finite temperature difference generate entropy.</p></div><div class="back-row"><button class="btn gold" data-act="${returnTo}">${returnTo==='resume'?'▶ RESUME':'← BACK'}</button></div>`);}
 function showGear(){const advice=powerAdvice[activeRun?level:save.current],recommended=advice.gear;const returnTo=screen==='play'||screen==='paused'?'resume':'menu';if(activeRun&&level===0){stage.tutorialInfo=true;persistRun();}else if(screen==='play')persistRun();screen='gear';panel(`<div class="eyebrow">✦ EQUIP A POWER. CHANGE YOUR APPROACH. ✦</div><div class="logo" style="font-size:28px">SUIT POWERS</div><p class="lead"><strong>Recommended for world ${activeRun?level+1:save.current+1}: ${powerLabels[recommended]}</strong><br>${advice.when}</p><div class="info"><p><strong>How you get more:</strong> ${save.character==='professor'?'Professor Aarons starts with MAGNET, BURST and SHIELD. Finish worlds 3–5 to unlock ICE, BOOST, then HURRY.':'Start with MAGNET. Finish worlds 1–5 to unlock BURST, SHIELD, ICE, BOOST, then HURRY.'} Earlier powers stay yours. Tap an unlocked card here to equip it; return to the game and tap Y (keyboard F) to use it.</p><p><strong>Different ways to help:</strong> MAGNET pulls supplies off platforms. BURST stuns drones or helps turn pipes. SHIELD lets you brave hazards. ICE bridges marked frozen gaps and freezes drones. BOOST speeds the boulder and adds a jump. HURRY speeds a prepared, seeded machine. Choose help for the obstacle you face—not just the world’s recommendation.</p></div><div class="gear-grid">${powers.map((p,i)=>`<button class="gear-tile ${i>availablePowerIndex()?'locked':i===equipped?'equipped':''}" ${i>availablePowerIndex()?'disabled':''} data-gear="${i}" data-return="${returnTo}"><strong>${i>availablePowerIndex()?'🔒':p.icon} ${p.name}</strong><span>${p.help}</span>${i===recommended?'<small>★ RECOMMENDED HERE</small>':''}<small>${i>availablePowerIndex()?`Unlock in world ${i+1}`:i===equipped?'EQUIPPED':'TAP TO EQUIP'}</small></button>`).join('')}</div><p class="small">Y / F uses the equipped power. Read what it helps with above, then watch the effect in the world. After a short recharge you can use it again. Earlier powers stay available. Powers help you; none replace aiming or complete the objectives for you.</p><div class="back-row"><button class="btn gold" data-act="${returnTo}">${returnTo==='resume'?'▶ RESUME':'← MAIN MENU'}</button></div>`);}
 function pauseGame(){if(screen!=='play')return;persistRun();screen='paused';panel(`<div class="eyebrow">✦ PIP IS KEEPING YOUR PLACE ✦</div><div class="logo" style="font-size:32px">PAUSED</div><div class="menu-buttons"><button class="btn primary gold" data-act="resume">▶ RESUME</button><button class="btn secondary" data-act="help">? HOW TO PLAY</button><button class="btn secondary" data-act="gear">Y · POWERS</button><button class="btn secondary" data-act="journal">▤ JOURNAL</button><button class="btn secondary" data-act="characters">👤 ${character().name} · ${save.character==='student'?'EASY':save.character==='professor'?'HARD':'MEDIUM'}</button><button class="btn secondary" data-act="map">⌘ WORLD MAP</button><button class="btn secondary" data-act="menu">← MAIN MENU</button></div>`);}
@@ -292,7 +391,7 @@ function startLevel(i,fresh=false,storyEntry=''){
 function continueGame(){if(!save.characterChosen&&!Object.keys(save.runs).length&&!save.completed.length){beginClassroomPrologue('start');return;}startLevel(Math.min(save.current,save.unlocked));}
 function say(lines,onEnd){clearControls();$('tutorialTip').classList.add('hidden');dialogue={lines:characterDialogue(lines),index:0,shown:0,onEnd:onEnd||null};$('speech').classList.remove('hidden');renderSpeech();}
 function renderSpeech(){if(!dialogue)return;positionGuidance();const [name,text]=dialogue.lines[dialogue.index];$('speechSpeaker').textContent=name;$('speechFace').textContent=name==='PIP'?'✦':name==='DR. VALE'?'◈':'◉';$('speechText').textContent=text.slice(0,Math.floor(dialogue.shown));$('speechNext').textContent=dialogue.shown<text.length?'TAP TO REVEAL ▾':'TAP TO CONTINUE ▾';}
-function advanceSpeech(){if(!dialogue)return;const text=dialogue.lines[dialogue.index][1];if(dialogue.shown<text.length){dialogue.shown=text.length;renderSpeech();return;}if(dialogue.index<dialogue.lines.length-1){dialogue.index++;dialogue.shown=0;renderSpeech();return;}const done=dialogue.onEnd;dialogue=null;clearControls();$('speech').classList.add('hidden');if(done)done();}
+function advanceSpeech(){if(!dialogue)return;const text=dialogue.lines[dialogue.index][1];if(dialogue.shown<text.length){dialogue.shown=text.length;renderSpeech();return;}if(dialogue.index<dialogue.lines.length-1){dialogue.index++;dialogue.shown=0;renderSpeech();return;}const done=dialogue.onEnd;dialogue=null;clearControls();$('speech').classList.add('hidden');if(done)done();positionGuidance();}
 function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');toastTimer=220;}
 function milestone(message){checkpoint=level===4?(stage.boulderRest===475?90:stage.boulderRest-40):Math.max(checkpoint,Math.min(800,stage.safeX||90));stage.checkpoint=checkpoint;persistRun();toast(message);beep(820,.17);}
 function toolName(){return level===0?(stage.tool===0?'q = HEAT':'w = WORK'):level===2?'HEAT':level===4?'WEDGE':level===5?'REAGENT':level===6?['ENERGY','HEAT','REAGENT'][Math.min(stage.finalStep,2)]:'STUN BOLT';}
@@ -487,8 +586,8 @@ function drawGame(){
  if(stage.lensReveal>0||scene==='awakened')for(let n=0;n<3;n++){const radius=(cinematicTime*3+n*80)%260;ctx.save();ctx.strokeStyle='#8beee4';ctx.globalAlpha=(1-radius/260)*.8;ctx.lineWidth=4;ctx.beginPath();ctx.arc(player.x,player.y-32,radius+28,0,Math.PI*2);ctx.stroke();ctx.restore();}
 }
 function animate(t){requestAnimationFrame(animate);pollGamepad();const dt=Math.min(100,Math.max(0,t-last));last=t;cinematicTime+=dt/16.67;if(screen==='play'&&stage.lensReveal>0)stage.lensReveal=Math.max(0,stage.lensReveal-dt*.04);if(screen==='play'&&!dialogue&&!document.hidden){accumulator+=dt;while(accumulator>=1000/60){stepGame();accumulator-=1000/60;if(screen!=='play')break;}}else accumulator=0;if(screen==='circuit'&&!document.hidden&&powerCooldown>0)powerCooldown=Math.max(0,powerCooldown-dt*60/1000);if(screen==='play')drawGame();else{ticks++;drawMenuBackdrop();}if(dialogue&&screen==='play'&&dt>0){const text=dialogue.lines[dialogue.index][1];dialogueTimer+=dt;if(dialogue.shown<text.length&&dialogueTimer>=18){dialogue.shown=Math.min(text.length,dialogue.shown+Math.floor(dialogueTimer/18));dialogueTimer=0;renderSpeech();}}}
-$('overlay').addEventListener('click',e=>{const b=e.target.closest('[data-act],[data-level],[data-gear],[data-pipe],[data-temp],[data-bind],[data-character],[data-prologue-character]');if(!b||b.disabled)return;unlockAudio().then(()=>beep(500,.06));if(b.hasAttribute('data-prologue-character')){choosePrologueHero(b.dataset.prologueCharacter);return;}if(b.hasAttribute('data-character')){selectCharacter(b.dataset.character);return;}if(b.hasAttribute('data-bind')){pendingBinding=b.dataset.bind;showBindings();return;}if(b.hasAttribute('data-level')){if(!save.characterChosen&&!Object.keys(save.runs).length&&!save.completed.length)beginClassroomPrologue('start');else startLevel(Number(b.dataset.level));return;}if(b.hasAttribute('data-gear')){if(equipped!==Number(b.dataset.gear))powerTime=0;equipped=Number(b.dataset.gear);save.gear=equipped;if(stage.initialized)persistRun();else store();b.dataset.return==='resume'?resumeGame():showMenu();return;}if(b.hasAttribute('data-pipe')){const i=Number(b.dataset.pipe);stage.circuit[i]=rotatePipe(stage.circuit[i]);persistRun();if(circuitConnected())testCircuit();else showCircuit();return;}if(b.hasAttribute('data-temp')){chooseTemperature(Number(b.dataset.temp));return;}switch(b.dataset.act){case 'help':showHelp();break;case 'bindings':showBindings();break;case 'defaultKeys':save.keys={};pendingBinding=null;store();showBindings();break;case 'storyIntro':beginClassroomPrologue('switch');break;case 'storyNext':showStoryIntro(storyPage+1);break;case 'classroomNext':advanceClassroomPrologue();break;case 'characters':showCharacters();break;case 'continue':continueGame();break;case 'new':beginClassroomPrologue('new');break;case 'menu':showMenu();break;case 'map':showMap();break;case 'settings':showSettings();break;case 'about':showAbout();break;case 'journal':showJournal();break;case 'gear':showGear();break;case 'resume':resumeGame();break;case 'sound':toggleSound();showSettings();break;case 'music':save.music=!save.music;store();showSettings();break;case 'controller':save.controller=!save.controller;store();showSettings();break;case 'testSound':save.sound=true;store();unlockAudio().then(()=>{tone(523,.22,'triangle',.12);tone(659,.22,'triangle',.12,.22);tone(784,.3,'triangle',.12,.44);const status=$('audioStatus');if(status)status.textContent=audioCtx?.state==='running'?'♪ Sound test played. If silent, check device volume and silent mode.':'Tap TEST SOUND again to start audio.';});break;case 'next':startLevel(Math.min(6,level+1));break;case 'testCircuit':testCircuit();break;case 'circuitPower':activatePower();break;case 'reset':if(confirm('Erase this browser’s progress?')){save=freshSave();stage={};store();showSettings();}break;}});
-$('pauseBtn').addEventListener('click',pauseGame);$('journalBtn').addEventListener('click',showJournal);$('soundBtn').addEventListener('click',toggleSound);$('gearBtn').addEventListener('click',showGear);$('toolBtn').addEventListener('click',toggleTool);$('speech').addEventListener('click',advanceSpeech);
+$('overlay').addEventListener('click',e=>{const b=e.target.closest('[data-act],[data-level],[data-gear],[data-pipe],[data-temp],[data-bind],[data-character],[data-prologue-character]');if(!b||b.disabled)return;unlockAudio().then(()=>beep(500,.06));if(b.hasAttribute('data-prologue-character')){choosePrologueHero(b.dataset.prologueCharacter);return;}if(b.hasAttribute('data-character')){selectCharacter(b.dataset.character);return;}if(b.hasAttribute('data-bind')){pendingBinding=b.dataset.bind;showBindings();return;}if(b.hasAttribute('data-level')){if(!save.characterChosen&&!Object.keys(save.runs).length&&!save.completed.length)beginClassroomPrologue('start');else startLevel(Number(b.dataset.level));return;}if(b.hasAttribute('data-gear')){if(equipped!==Number(b.dataset.gear))powerTime=0;equipped=Number(b.dataset.gear);save.gear=equipped;if(stage.initialized)persistRun();else store();b.dataset.return==='resume'?resumeGame():showMenu();return;}if(b.hasAttribute('data-pipe')){const i=Number(b.dataset.pipe);stage.circuit[i]=rotatePipe(stage.circuit[i]);persistRun();if(circuitConnected())testCircuit();else showCircuit();return;}if(b.hasAttribute('data-temp')){chooseTemperature(Number(b.dataset.temp));return;}switch(b.dataset.act){case 'help':showHelp();break;case 'bindings':showBindings();break;case 'defaultKeys':save.keys={};pendingBinding=null;store();showBindings();break;case 'storyIntro':beginClassroomPrologue('switch');break;case 'storyNext':showStoryIntro(storyPage+1);break;case 'classroomNext':advanceClassroomPrologue();break;case 'characters':showCharacters();break;case 'continue':continueGame();break;case 'new':beginClassroomPrologue('new');break;case 'menu':showMenu();break;case 'map':showMap();break;case 'settings':showSettings();break;case 'about':showAbout();break;case 'journal':showJournal();break;case 'gear':showGear();break;case 'resume':resumeGame();break;case 'sound':toggleSound();showSettings();break;case 'music':save.music=!save.music;store();if(save.music)unlockAudio();else stopAudioNotes();updateSoundLabel();showSettings();break;case 'controller':save.controller=!save.controller;store();showSettings();break;case 'testSound':save.sound=true;store();unlockAudio(true,true).then(()=>{tone(523,.22,'triangle',.12);tone(659,.22,'triangle',.12,.22);tone(784,.3,'triangle',.12,.44);const status=$('audioStatus');if(status)status.textContent=audioCtx?.state==='running'?'♪ Sound test played. If silent, check device volume and silent mode.':'Tap TEST SOUND again to start audio.';});break;case 'next':startLevel(Math.min(6,level+1));break;case 'testCircuit':testCircuit();break;case 'circuitPower':activatePower();break;case 'reset':if(confirm('Erase this browser’s progress?')){save=freshSave();stage={};store();showSettings();}break;}});
+$('pauseBtn').addEventListener('click',pauseGame);$('journalBtn').addEventListener('click',showJournal);$('soundBtn').addEventListener('click',handleAudioButton);$('gearBtn').addEventListener('click',showGear);$('toolBtn').addEventListener('click',toggleTool);$('speech').addEventListener('click',advanceSpeech);
 const keyMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'up',ArrowDown:'down',Space:'jump',KeyW:'jump',KeyJ:'fire',KeyE:'act',KeyF:'power'};
 
 // Casual gameplay: one next step, visible help, and input ownership per device.
@@ -694,8 +793,14 @@ function setupInput(){
  const suspend=()=>{clearControls();if(screen==='play')persistRun();};
  window.addEventListener('blur',suspend);window.addEventListener('pagehide',suspend);
  window.addEventListener('orientationchange',suspend);
- document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();});
- window.addEventListener('pointerdown',()=>unlockAudio(),{capture:true});
+ const restoreAudio=()=>{unlockAudio(false);positionGuidance();};
+ window.addEventListener('blur',suspendAudio);window.addEventListener('pagehide',suspendAudio);
+ window.addEventListener('focus',restoreAudio);window.addEventListener('pageshow',restoreAudio);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){suspend();suspendAudio();}else restoreAudio();});
+ const gestureAudio=e=>{if(!e.target?.closest?.('#soundBtn'))unlockAudio();};
+ for(const event of ['pointerdown','pointerup','touchend','click','keydown'])window.addEventListener(event,gestureAudio,{capture:true,passive:event==='touchend'});
+ window.addEventListener('resize',positionGuidance);window.addEventListener('orientationchange',positionGuidance);
+ if(window.ResizeObserver){const fit=new window.ResizeObserver(positionGuidance);fit.observe($('worldView'));fit.observe($('gameFrame'));}
 }
 function pollGamepad(){
  let pad;try{pad=[...(navigator.getGamepads?.()||[])].find(p=>p?.connected&&p.mapping==='standard');}catch{return;}
