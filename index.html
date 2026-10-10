@@ -87,10 +87,14 @@
 @keyframes tutorialPulse{to{outline-color:#8debd6;box-shadow:0 0 24px #8debd688}}
 #tutorialTip{position:absolute;top:112px;left:14px;z-index:7;max-width:370px;padding:9px 12px;background:#172c46ed;border:2px solid #ffe49c;color:#fff0c6;font:12px/1.45 monospace;pointer-events:none}
 #tutorialTip.hidden{display:none!important}
+#speech{top:var(--guide-top,105px);bottom:auto;max-height:34%;overflow-y:auto;min-height:0}
+#tutorialTip{top:var(--guide-top,105px);padding:7px 10px}
+@media(max-width:650px) and (orientation:portrait){#speech{top:var(--guide-top,155px);bottom:auto;max-height:26%}}
+@media(max-height:500px) and (orientation:landscape){#speech{top:var(--guide-top,85px);bottom:auto;max-height:40%}}
 .character-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.character-grid .gear-tile{gap:10px}.character-grid strong{font-size:16px}
 @media(max-width:650px){.character-grid{grid-template-columns:1fr}.character-grid .gear-tile{min-height:190px}}
-@media(max-width:650px) and (orientation:portrait){#tutorialTip{top:145px;left:10px;right:10px;max-width:none;font-size:11px;padding:8px}}
-@media(max-height:500px) and (orientation:landscape){#tutorialTip{top:85px;font-size:10px;padding:5px;max-width:320px}}
+@media(max-width:650px) and (orientation:portrait){#tutorialTip{top:var(--guide-top,155px);left:10px;right:10px;max-width:none;font-size:11px;padding:8px}}
+@media(max-height:500px) and (orientation:landscape){#tutorialTip{top:var(--guide-top,85px);font-size:10px;padding:5px;max-width:320px}}
 </style>
 </head>
 <body>
@@ -102,7 +106,7 @@
 <div id="toast" class="hidden" role="status"></div>
 <div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small>JUMP</small></button></div></div>
 <div id="aimHint" class="hidden">↑ ↓ AIM · SPACE JUMP · J FIRE · E ACT · F POWER</div>
-<div id="tutorialTip" class="hidden" role="status"></div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v2.9</span>
+<div id="tutorialTip" class="hidden" role="status"></div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.0</span>
 </div></div>
 <script>
 
@@ -119,7 +123,7 @@ const levels=[
 {title:'THE HEART OF THE UNIVERSE',world:'The Final Core',badge:'🌌',suit:'#ead8ff',sky:'#30224f',hill:'#634f8d',accent:'#dcc0ff',topic:'All Laws · State Functions · Spontaneity',task:'Restore the three core modules in order, then reach the portal.',intro:[['PIP','We made it, Flux! The heart of the universe is right here.'],['FLUX','Three broken modules. One final chance.'],['PIP','Energy, entropy, and free energy... everything we learned will help us fix this!']],end:'You restored the Core by conserving energy, respecting the natural direction of heat flow, and finding favorable conditions for a reaction. Thermodynamics helps predict which changes are possible and which direction is favored—not necessarily how fast they occur.',upgrade:'Master of thermodynamics',science:'Final synthesis: First, Second, and Third Laws; q and w; state functions; spontaneity and ΔG = ΔH − TΔS.'}
 ];
 
-const VERSION='2.9';
+const VERSION='3.0';
 const STORAGE='entropy-quest-save-v1';
 const powers=[
  {id:'magnet',name:'ENERGY MAGNET',icon:'✦',color:'#fbd277',help:'Pulls nearby loose sparks and supply crystals toward you for 7 seconds.',lesson:'The magnet moves supplies; it does not create energy.'},
@@ -161,7 +165,17 @@ function selectCharacter(id){
  for(const key of ['unlocked','current','completed','xp','gear','runs','lensUnlocked','mountainStar'])save[key]=next[key]??(key==='mountainStar'?false:freshSave()[key]);
  save.character=id;save.characterChosen=true;save.campaigns=campaigns;level=save.current;equipped=Math.min(save.gear,availablePowerIndex());powerTime=0;powerCooldown=0;stage={};player={};activeRun=false;dialogue=null;clearControls();store();showMenu();
 }
-function characterDialogue(lines){return lines.map(([speaker,text,scene],i)=>[speaker.startsWith('FLUX')?character().speaker+(speaker.includes('THOUGHT')?' · THOUGHT':''):speaker,text===lensOpening[0][1]?character().origin:text.replace(/\bFlux\b/g,character().name),scene]);}
+function characterDialogue(lines){return lines.map(([speaker,text,scene])=>{
+ const hero=speaker.startsWith('FLUX');
+ const voiced=text===lensOpening[0][1]?character().origin:hero?(heroVoices[save.character]?.[text]||text):text;
+ return [hero?character().speaker+(speaker.includes('THOUGHT')?' · THOUGHT':''):speaker,voiced.replace(/\b(?:Dr\. )?Flux\b/g,character().name),scene];
+});}
+function positionGuidance(){
+ const hud=$('hud'),frame=$('gameFrame');
+ if(!hud.getBoundingClientRect||!frame.style?.setProperty)return;
+ const h=hud.getBoundingClientRect(),f=frame.getBoundingClientRect();
+ if(h.height>0)frame.style.setProperty('--guide-top',Math.ceil(h.bottom-f.top+8)+'px');
+}
 function readSave(){try{const j=JSON.parse(localStorage.getItem(STORAGE));if(!j||typeof j!=='object')return freshSave();const s={...freshSave(),...j};s.unlocked=Math.max(0,Math.min(6,Number(j.unlocked)||0));s.current=Math.max(0,Math.min(s.unlocked,Number(j.current)||0));s.completed=Array.isArray(j.completed)?[...new Set(j.completed.filter(x=>Number.isInteger(x)&&x>=0&&x<7))]:[];s.gear=Math.max(0,Math.min(5,Number(j.gear)||0));s.runs=j.version===2&&j.runs&&typeof j.runs==='object'?j.runs:{};s.character=characters[j.character]?j.character:'flux';s.campaigns=j.campaigns&&typeof j.campaigns==='object'&&!Array.isArray(j.campaigns)?j.campaigns:{};s.version=2;return s;}catch{return freshSave();}}
 let save=readSave(),screen='menu',level=0,player={},last=0,ticks=0,accumulator=0,particles=[],pickups=[],projectiles=[],enemies=[],dialogue=null,dialogueTimer=0,toastTimer=0,controls={},stage={},portalHint=false,aim=0,shotTimer=0,noticeTimer=0,powerCooldown=0,powerTime=0,equipped=0,jumpQueued=false,checkpoint=90,activeRun=false;
 let audioCtx,audioMaster,musicTimer,musicBeat=0,musicWorld=-1,musicNext=0;
@@ -233,7 +247,7 @@ function startLevel(i,fresh=false){
 }
 function continueGame(){if(!save.characterChosen&&!Object.keys(save.runs).length&&!save.completed.length){showCharacters();return;}startLevel(Math.min(save.current,save.unlocked));}
 function say(lines,onEnd){clearControls();$('tutorialTip').classList.add('hidden');dialogue={lines:characterDialogue(lines),index:0,shown:0,onEnd:onEnd||null};$('speech').classList.remove('hidden');renderSpeech();}
-function renderSpeech(){if(!dialogue)return;const [name,text]=dialogue.lines[dialogue.index];$('speechSpeaker').textContent=name;$('speechFace').textContent=name==='PIP'?'✦':name==='DR. VALE'?'◈':'◉';$('speechText').textContent=text.slice(0,Math.floor(dialogue.shown));$('speechNext').textContent=dialogue.shown<text.length?'TAP TO REVEAL ▾':'TAP TO CONTINUE ▾';}
+function renderSpeech(){if(!dialogue)return;positionGuidance();const [name,text]=dialogue.lines[dialogue.index];$('speechSpeaker').textContent=name;$('speechFace').textContent=name==='PIP'?'✦':name==='DR. VALE'?'◈':'◉';$('speechText').textContent=text.slice(0,Math.floor(dialogue.shown));$('speechNext').textContent=dialogue.shown<text.length?'TAP TO REVEAL ▾':'TAP TO CONTINUE ▾';}
 function advanceSpeech(){if(!dialogue)return;const text=dialogue.lines[dialogue.index][1];if(dialogue.shown<text.length){dialogue.shown=text.length;renderSpeech();return;}if(dialogue.index<dialogue.lines.length-1){dialogue.index++;dialogue.shown=0;renderSpeech();return;}const done=dialogue.onEnd;dialogue=null;clearControls();$('speech').classList.add('hidden');if(done)done();}
 function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');toastTimer=220;}
 function milestone(message){checkpoint=level===4?(stage.boulderRest===475?90:stage.boulderRest-40):Math.max(checkpoint,Math.min(800,stage.safeX||90));stage.checkpoint=checkpoint;persistRun();toast(message);beep(820,.17);}
@@ -442,6 +456,55 @@ const chapterStory=[
  [['DR. VALE','Flux! I wanted to help people. I thought I could control every change. Now the Engine has trapped us all.'],['FLUX','We cannot ignore the rules—but we can work with them. Help me reconnect the Heart, then we go home.'],['PIP','You found him. Now save everyone: supply energy, let warmth move toward cooler places, and prepare the final reaction.']]
 ];
 levels.forEach((l,i)=>l.intro=[...chapterStory[i],...quickIntros[i].map(text=>['PIP',text])]);
+// Original character writing: Flux is curious and expressive; Aarons uses
+// physical meaning before symbols. These are not quotations from a lecture.
+characters.flux.origin='I’m Dr. Flux, a scientist from Jamaica. Okay, this invention looks amazing—but where is all that energy coming from? I came to watch a classroom demo. Now I really want to see how it works.';
+const heroVoices={flux:{},professor:{},student:{}};
+function addHeroVoice(source,flux,professor,student){heroVoices.flux[source]=flux;heroVoices.professor[source]=professor;heroVoices.student[source]=student;}
+addHeroVoice(lensOpening[2][1],
+ 'Wait—the batteries are draining, and the whole room is shaking! Vale, I love the idea, but this is getting out of hand. Shut it down!',
+ 'Look at the batteries: their stored energy is being used up. The shaking is a warning. Vale, stop the demonstration!',
+ 'The batteries are draining! The room is shaking! Vale, please stop!');
+addHeroVoice(lensOpening[3][1],
+ 'Okay… where am I? I was literally just in the classroom. Where is everyone? And why does everything look so faded? Something happened here.',
+ 'Where are my students? We were just in the classroom. First, observe: no lights, faded colors. Something has changed the energy supply here.',
+ 'Where am I? I was just in class. Where did everyone go? Why is everything so gray?');
+addHeroVoice(chapterStory[0][1][1],
+ 'Okay, I see it: collect the glowing energy, power that big gate, then find Vale. That’s a plan I can actually follow. Let’s do it!',
+ 'Start with what you can see: glowing energy and a gate that needs power. Collect the energy, power the gate, then follow Vale.',
+ 'Collect the energy, power the gate, and find Vale. Got it.');
+addHeroVoice(chapterStory[1][0][1],
+ 'Hey, that’s the battery label from class! So he really came this way. I love finding clues like this. What did he disconnect?',
+ 'That battery label matches the classroom demonstration. Evidence first: Vale came this way. Now trace the missing connection.',
+ 'That battery label is from class. Vale must have come this way.');
+addHeroVoice(chapterStory[2][1][1],
+ 'So the warmth needs somewhere cooler to go—not another equation to solve. I like that. Let’s aim at the glowing cooler receivers and clear a path.',
+ 'Think of a hot drink cooling in a room: warmth moves toward the cooler surroundings. Here, aim at the glowing cooler receivers to open a safe path.',
+ 'Warmth goes from hot to cool. I’ll aim at the glowing cooler receivers.');
+addHeroVoice(chapterStory[3][0][1],
+ 'A cooling pump! Okay, maybe we can use what he left behind. Let’s find those crystals and see what the pump can do.',
+ 'A cooling pump. Removing energy makes something colder, but it takes work to keep pumping. Gather the crystals, then cool the pump step by step.',
+ 'He left a cooling pump. I’ll gather the crystals and try it.');
+addHeroVoice(chapterStory[4][1][1],
+ 'Okay, we have to move that rock up there. BOOST can help, and those green ledges give us a break. One section at a time—we’ve got this.',
+ 'Lifting the rock needs a push: that is work. Hold PUSH behind it; use BOOST for help. The green ledges hold your progress while you rest.',
+ 'Push the rock up the mountain. BOOST helps, and the green ledges save my progress.');
+addHeroVoice(chapterStory[5][0][1],
+ 'Wait… he can’t get home either? Then this isn’t just chasing him anymore. We have to reach him—and figure this out together.',
+ 'Vale is trapped too. We need to reach him. In this garden, watch both the conditions and how quickly the plants grow: possible does not always mean fast.',
+ 'Vale is trapped too. We need to reach him and help everyone get home.');
+addHeroVoice(chapterStory[6][1][1],
+ 'Vale, this world is honestly incredible—but everyone needs to get home. Help me reconnect the Heart. Let’s work with the rules this time, okay?',
+ 'Energy still needs a source, and warmth still has a natural direction. Work with those rules, Vale. Help us reconnect the Heart and bring the class home.',
+ 'Help me reconnect the Heart, Vale. Let’s get everyone home.');
+addHeroVoice('The colors… the energy paths… I can finally see what Vale changed. These glasses do not create energy. They help me understand where it goes.',
+ 'Whoa… look at those colors! I can see the energy paths now. The glasses aren’t making energy—they’re showing what was already happening. That is so cool.',
+ 'Now the paths are visible. The glasses do not make energy; they reveal where it moves. Watch the glow first, then connect it to the explanation.',
+ 'I can see the energy paths! The glasses show where energy goes; they don’t make it.');
+addHeroVoice('Then I’ll use what I teach. One experiment at a time. Let’s bring everyone home.',
+ 'Okay, now we have something to work with. Let’s try things, see what happens, and bring everyone home. One good idea at a time.',
+ 'Observe, try, and explain what changed. One step at a time. Let’s bring our class home.',
+ 'Let’s follow the clues and bring everyone home.');
 const storyClues=[
  'A lens recording shows Vale powering his exit with stored battery energy. His doorway was fictional technology—not free energy. Your warmth and pushes opened the same route.',
  'Vale’s missing generator connection diverted power into the Boundary Engine. Your circuit restored a path from battery to lamp. The energy had a source all along.',
@@ -642,6 +705,7 @@ function updateHUD(){
  $('aimHint').textContent='← → MOVE · ↑ ↓ AIM · A JUMP · B SHOOT · X USE · Y POWER';
  updateSoundLabel();
  updateTutorial();
+ positionGuidance();
 }
 function activatePower(){
  if(screen==='circuit'){if(equipped!==1||powerCooldown>0){$('circuitHint').textContent=equipped!==1?'Equip BURST to get pipe help, or turn pipes yourself.':'BURST is recharging. Keep turning pipes.';return;}let helped=0;for(let i=0;i<9&&helped<2;i++)if(stage.circuit[i]!==solvedCircuit[i]){stage.circuit[i]=solvedCircuit[i];helped++;}powerCooldown=240;persistRun();if(circuitConnected())testCircuit();else{showCircuit();$('circuitHint').textContent='BURST turned '+helped+' pipes for you. Follow the green connection!';}return;}
