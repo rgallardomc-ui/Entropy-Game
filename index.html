@@ -201,7 +201,7 @@
 <div id="controllerDock">
 <div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small id="jumpLabel">JUMP</small></button></div></div>
 <div id="aimHint" class="hidden">↑ ↓ AIM · SPACE JUMP · J FIRE · E ACT · F POWER</div>
-</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v4.6</span>
+</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v4.7</span>
 </div></div>
 <script>
 
@@ -218,7 +218,7 @@ const levels=[
 {title:'THE HEART OF THE UNIVERSE',world:'The Final Core',badge:'🌌',suit:'#ead8ff',sky:'#30224f',hill:'#634f8d',accent:'#dcc0ff',topic:'All Laws · State Functions · Spontaneity',task:'Restore the three core modules in order, then reach the portal.',intro:[['PIP','We made it, Flux! The heart of the universe is right here.'],['FLUX','Three broken modules. One final chance.'],['PIP','Energy, entropy, and free energy... everything we learned will help us fix this!']],end:'You restored the Core by conserving energy, respecting the natural direction of heat flow, and finding favorable conditions for a reaction. Thermodynamics helps predict which changes are possible and which direction is favored—not necessarily how fast they occur.',upgrade:'Master of thermodynamics',science:'Final synthesis: First, Second, and Third Laws; q and w; state functions; spontaneity and ΔG = ΔH − TΔS.'}
 ];
 
-const VERSION='4.6',INSTRUCTIONS_VERSION='3.1';
+const VERSION='4.7',INSTRUCTIONS_VERSION='3.1';
 const STORAGE='entropy-quest-save-v1';
 const powers=[
  {id:'magnet',name:'ENERGY MAGNET',icon:'✦',color:'#fbd277',help:'Pulls nearby loose sparks and supply crystals toward you for 7 seconds.',lesson:'The magnet moves supplies; it does not create energy.'},
@@ -852,7 +852,7 @@ const worldShifts={
  5:{kind:'weave',title:'GREENHOUSE CUBE FIELD',goal:'Hold ← → to dodge cubes. A jumps LOW blocks.',lesson:'We carried the catalyst safely to the reactor. A catalyst lowers the activation barrier: it can speed a favorable reaction, but does not change its Gibbs energy or equilibrium.',intro:'The greenhouse is stretching into a cube field! Steer left and right through the open routes; jump the LOW blocks with A. It gets faster, but jumping never slows the world.',color:'#adf2b4'}
 };
 function maybeWorldShift(){
- if(!worldShifts[level]||stage.shift||stage.shiftDone||!stage.done||player.x<810||player.x>=866)return false;
+ if(!worldShifts[level]||stage.shift||stage.shiftDone||!stage.done||player.x<810)return false;
  beginWorldShift();return true;
 }
 function beginWorldShift(){
@@ -1711,7 +1711,10 @@ const levelRecaps=[
 ];
 function levelRecap(i){const r=levelRecaps[i],shift=save.shiftLog?.[i],c=worldShifts[i];return `<div class="info"><p><strong>✦ What you did</strong><br>${r.did}</p><p><strong>💡 What that taught you</strong><br>${r.learned}</p>${shift&&c?`<p><strong>⚡ ${c.title} · ${shift.rescued?'Pip rescue':'Route navigated'}</strong><br>${c.lesson}</p>`:''}</div>`;}
 function finishLevel(){
- if(screen!=='play'||dialogue||!stage.done)return;const was=save.completed.includes(level);
+ if(screen!=='play'||dialogue||!stage.done||stage.shift)return;
+ // Offer the rift even when repairs finish beyond the approach zone.
+ if(worldShifts[level]&&!stage.shiftDone){beginWorldShift();return;}
+ const was=save.completed.includes(level);
  if(!was){save.completed.push(level);save.xp+=100;save.unlocked=Math.max(save.unlocked,Math.min(6,level+1));}
  activeRun=false;delete save.runs[level];save.current=Math.min(6,level+1);store();screen=level===6?'ending':'complete';
  tone(660,.18);tone(830,.2,'triangle',.08,.18);tone(990,.3,'triangle',.08,.38);
