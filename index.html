@@ -183,7 +183,7 @@
 <div id="controllerDock">
 <div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small>JUMP</small></button></div></div>
 <div id="aimHint" class="hidden">↑ ↓ AIM · SPACE JUMP · J FIRE · E ACT · F POWER</div>
-</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.5</span>
+</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.6</span>
 </div></div>
 <script>
 
@@ -200,7 +200,7 @@ const levels=[
 {title:'THE HEART OF THE UNIVERSE',world:'The Final Core',badge:'🌌',suit:'#ead8ff',sky:'#30224f',hill:'#634f8d',accent:'#dcc0ff',topic:'All Laws · State Functions · Spontaneity',task:'Restore the three core modules in order, then reach the portal.',intro:[['PIP','We made it, Flux! The heart of the universe is right here.'],['FLUX','Three broken modules. One final chance.'],['PIP','Energy, entropy, and free energy... everything we learned will help us fix this!']],end:'You restored the Core by conserving energy, respecting the natural direction of heat flow, and finding favorable conditions for a reaction. Thermodynamics helps predict which changes are possible and which direction is favored—not necessarily how fast they occur.',upgrade:'Master of thermodynamics',science:'Final synthesis: First, Second, and Third Laws; q and w; state functions; spontaneity and ΔG = ΔH − TΔS.'}
 ];
 
-const VERSION='3.5',INSTRUCTIONS_VERSION='3.1';
+const VERSION='3.6',INSTRUCTIONS_VERSION='3.1';
 const STORAGE='entropy-quest-save-v1';
 const powers=[
  {id:'magnet',name:'ENERGY MAGNET',icon:'✦',color:'#fbd277',help:'Pulls nearby loose sparks and supply crystals toward you for 7 seconds.',lesson:'The magnet moves supplies; it does not create energy.'},
@@ -419,29 +419,51 @@ const valePhases=[
  {name:'ENGINE CORE',label:'B SHOOT · OPEN CORE',hint:'Aim at the GREEN core when it opens · dodge Vale’s marked shots',color:'#a7f5b4',kind:'bolt',pip:'The shield is down! His GREEN core opens between attacks. Aim and B SHOOT three times while it glows. The red line warns where he will fire. You powered the Heart—that is your blaster’s energy source.'}
 ];
 function valeBattle(){return level===6&&stage.boss&&!stage.boss.defeated;}
-function valeTarget(){const b=stage.boss;return b.phase===0?{x:690,y:365}:b.phase===1?{x:665+Math.sin(b.clock*.012)*42,y:285}:{x:825,y:345};}
-function valeOpen(){return stage.boss.phase<2||stage.boss.stun>0||stage.boss.clock%240>100;}
+function valeMotion(){return save.character==='student'?{centers:[815,765,740],ranges:[15,38,58],rate:.004,bob:5}:save.character==='professor'?{centers:[760,650,590],ranges:[70,155,240],rate:.012,bob:22}:{centers:[800,730,680],ranges:[30,85,145],rate:.007,bob:12};}
+function valePose(){
+ const b=stage.boss;if(!b||b.defeated)return {x:825,y:355};
+ if(b.transition){const p=b.transition,ratio=Math.min(1,p.elapsed/p.duration),ease=ratio*ratio*(3-2*ratio),m=valeMotion();return {x:p.valeX+(m.centers[Math.min(2,p.next)]-p.valeX)*ease,y:p.valeY+(340-p.valeY)*ease};}
+ if(b.warning?.valeX!==undefined)return {x:b.warning.valeX,y:b.warning.valeY};
+ if(b.stun>0&&b.stunPose)return b.stunPose;
+ const m=valeMotion(),t=b.clock*m.rate;return {x:m.centers[b.phase]+Math.sin(t)*m.ranges[b.phase],y:350-b.phase*9+Math.sin(t*.8)*m.bob};
+}
+function valeTarget(){const b=stage.boss,v=valePose();return b.phase===0?{x:690,y:365}:b.phase===1?{x:v.x-95+Math.sin(b.clock*.012)*22,y:v.y-62}:{x:v.x,y:v.y-10};}
+function valeOpen(){return !stage.boss.transition&&(stage.boss.phase<2||stage.boss.stun>0||stage.boss.clock%240>100);}
+function beginValeTransition(next){
+ const b=stage.boss,v=valePose(),t=valeTarget(),taunts=['NO! MY THERMAL ARMOR!','MY SHIELD! YOU WILL PAY!','NO! THE ENGINE IS MINE!'];
+ b.transition={next,elapsed:0,duration:ambientReduced?60:120,fromX:player.x,fromY:player.y,valeX:v.x,valeY:v.y,x:t.x,y:t.y,color:valePhases[b.phase].color,taunt:taunts[b.phase]};
+ b.react=120;b.taunt=b.transition.taunt;b.tauntLeft=150;b.warning=null;b.hazards=[];projectiles.forEach(refund);projectiles=[];clearControls();player.vx=0;player.vy=0;player.invincible=Math.max(120,player.invincible);$('toast').classList.add('hidden');toastTimer=0;
+ burst(t.x,t.y,b.transition.color,ambientReduced?18:65);tone(90,.38,'triangle',.08);tone(330,.22,'sine',.06,.12);tone(660,.28,'triangle',.06,.3);persistRun();updateHUD();
+}
+function stepValeTransition(){
+ const b=stage.boss,p=b?.transition;if(!p||screen!=='play'||dialogue||document.hidden)return;
+ clearControls();p.elapsed++;const progress=Math.max(0,Math.min(1,(p.elapsed/p.duration-.18)/.62)),ease=ambientReduced?1:progress*progress*(3-2*progress);
+ player.x=p.fromX+(450-p.fromX)*ease;player.y=p.fromY+(C.floor-p.fromY)*ease;player.vx=0;player.vy=0;player.onGround=true;
+ if(p.elapsed<p.duration)return;
+ const next=p.next;b.transition=null;b.clock=0;b.cooldown=0;b.stun=0;b.stunPose=null;b.attackTimer=-60;b.warning=null;b.hazards=[];projectiles.forEach(refund);projectiles=[];player.x=450;player.y=C.floor;player.dir=1;player.vx=0;player.vy=0;player.onGround=true;player.jumps=0;player.invincible=Math.max(player.invincible,120);checkpoint=450;stage.safeX=450;stage.checkpoint=450;clearControls();aim=0;
+ if(next<3){b.phase=next;b.hits=0;b.react=55;b.tauntLeft=70;persistRun();toast(`PHASE ${next+1}/3 · ${valePhases[next].hint}. Y SHIELD blocks hits; ICE slows attacks.`);updateHUD();}
+ else{b.defeated=true;stage.done=true;stage.finalStep=4;persistRun();say([['DR. VALE','No! My controls… You may have stopped this Engine, but you have not heard the last of me.'],['PIP','Engine isolated. Vale can’t control the worlds anymore! Follow the glowing doorway—we’re bringing the class home.']],()=>{milestone('VALE DEFEATED! The classroom doorway is open →');updateHUD();});}
+}
 function beginValeBattle(){
  stage.finalStep=3;stage.done=false;stage.boss={phase:0,hits:0,clock:0,cooldown:0,stun:0,attackTimer:0,warning:null,hazards:[],defeated:false};enemies=[];projectiles=[];checkpoint=120;stage.safeX=120;equipped=2;save.gear=2;powerTime=0;powerCooldown=0;persistRun();
  say([['DR. VALE','You repaired my power supply. Excellent. The Engine belongs to me—and you are not taking it away.'],['PIP',valePhases[0].pip]],()=>{toast('VALE · PHASE 1/3 — Aim at the glowing BLUE vent.');updateHUD();});
 }
 function hitVale(p){
- if(!valeBattle())return false;const b=stage.boss,t=valeTarget();if(Math.hypot(p.x-t.x,p.y-t.y)>44)return false;
+ if(!valeBattle())return false;const b=stage.boss;if(b.transition){refund(p);return true;}const t=valeTarget();if(Math.hypot(p.x-t.x,p.y-t.y)>44)return false;
  p.settled=true;refund(p);if(b.cooldown>0)return true;
  if(!valeOpen()){toast('Core closed! Dodge, then shoot when it glows GREEN.');return true;}
- b.hits++;b.cooldown=42;burst(t.x,t.y,valePhases[b.phase].color,25);beep(850+b.phase*90,.13,'triangle');
+ b.hits++;b.cooldown=42;b.react=38;b.taunt=['NOT MY ARMOR!','KEEP AWAY FROM THAT!','NO! STOP THE CORE!'][b.phase];b.tauntLeft=65;burst(t.x,t.y,valePhases[b.phase].color,25);beep(850+b.phase*90,.13,'triangle');
  if(b.hits<3){milestone(`VALE · ${valePhases[b.phase].name} ${b.hits}/3 — Keep aiming!`);return true;}
- if(b.phase<2){b.phase++;b.hits=0;b.clock=0;b.cooldown=0;b.stun=0;b.attackTimer=0;b.warning=null;b.hazards=[];persistRun();say([['DR. VALE',b.phase===1?'One damaged vent changes nothing. Try getting through my shield.':'You will not shut down my Engine!'],['PIP',valePhases[b.phase].pip]],()=>updateHUD());}
- else{b.defeated=true;b.warning=null;b.hazards=[];stage.done=true;stage.finalStep=4;persistRun();say([['DR. VALE','No! My controls… You may have stopped this Engine, but you have not heard the last of me.'],['PIP','Engine isolated. Vale can’t control the worlds anymore! Follow the glowing doorway—we’re bringing the class home.']],()=>{milestone('VALE DEFEATED! The classroom doorway is open →');updateHUD();});}
+ beginValeTransition(b.phase+1);
  return true;
 }
 function stepVale(){
- if(!valeBattle()||screen!=='play'||dialogue||document.hidden)return;const b=stage.boss,slow=powerTime>0&&equipped===3?.45:1;b.clock+=slow;if(b.cooldown>0)b.cooldown--;if(b.stun>0)b.stun--;
- if(b.stun<=0){b.attackTimer+=slow;if(!b.warning&&b.attackTimer>=130)b.warning={x:Math.max(70,Math.min(750,player.x)),y:player.y-20,left:save.character==='student'?115:save.character==='professor'?55:85};
+ if(!valeBattle()||stage.boss.transition||screen!=='play'||dialogue||document.hidden)return;const b=stage.boss,slow=powerTime>0&&equipped===3?.45:1;b.clock+=slow;if(b.cooldown>0)b.cooldown--;if(b.stun>0)b.stun--;if(b.react>0)b.react--;if(b.tauntLeft>0)b.tauntLeft--;
+ if(b.stun<=0){b.attackTimer+=slow;if(!b.warning&&b.attackTimer>=130){const v=valePose();b.warning={x:Math.max(70,Math.min(900,player.x)),y:player.y-20,valeX:v.x,valeY:v.y,sx:v.x-20,sy:v.y-85,left:save.character==='student'?115:save.character==='professor'?55:85};}
   if(b.warning){b.warning.left-=slow;if(b.warning.left<=0){const w=b.warning;
    if(b.phase===0)b.hazards.push({kind:'vent',x:w.x,y:450,life:65});
-   else if(b.phase===1)b.hazards.push({kind:'wave',x:805,y:425,vx:-3.2,vy:0,life:260});
-   else{const dx=w.x-805,dy=w.y-270,d=Math.max(1,Math.hypot(dx,dy));b.hazards.push({kind:'shot',x:805,y:270,vx:dx/d*3.5,vy:dy/d*3.5,life:270});}
+   else if(b.phase===1)b.hazards.push({kind:'wave',x:w.sx??805,y:425,vx:(w.x<(w.sx??805)?-1:1)*3.2,vy:0,life:300});
+   else{const sx=w.sx??805,sy=w.sy??270,dx=w.x-sx,dy=w.y-sy,d=Math.max(1,Math.hypot(dx,dy));b.hazards.push({kind:'shot',x:sx,y:sy,vx:dx/d*3.5,vy:dy/d*3.5,life:300});}
    b.warning=null;b.attackTimer=0;beep(170,.09,'triangle');
   }}
  }
@@ -449,11 +471,13 @@ function stepVale(){
  b.hazards=b.hazards.filter(h=>h.life>0&&h.x>-30&&h.y<560);
 }
 function drawValeBattle(){
- const b=stage.boss;if(!b)return;const t=b.defeated?{x:825,y:345}:valeTarget(),phase=valePhases[Math.min(2,b.phase)];
- drawRect(767,190,116,255,'#17283e');drawRect(775,198,100,239,b.defeated?'#354652':'#56426d');ctx.save();ctx.strokeStyle=b.defeated?'#8debc0':phase.color;ctx.lineWidth=4;ctx.beginPath();ctx.arc(825,278,92,0,Math.PI*2);ctx.stroke();ctx.restore();drawVale(825,355,2.5);
+ const b=stage.boss;if(!b)return;const v=valePose(),t=b.defeated?{x:825,y:345}:valeTarget(),phase=valePhases[Math.min(2,b.phase)];
+ drawRect(767,190,116,255,'#17283e');drawRect(775,198,100,239,b.defeated?'#354652':'#56426d');ctx.save();ctx.strokeStyle=b.defeated?'#8debc0':phase.color;ctx.lineWidth=3;ctx.globalAlpha=.35;ctx.beginPath();ctx.moveTo(825,315);ctx.lineTo(v.x,v.y-20);ctx.stroke();ctx.globalAlpha=1;ctx.beginPath();ctx.ellipse(v.x,v.y-58,83,90,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle=phase.color+'40';ctx.beginPath();ctx.ellipse(v.x,v.y+10,43,9,0,0,Math.PI*2);ctx.fill();ctx.restore();drawVale(v.x,v.y,2.5,b.react>0||b.transition?'panic':'angry',b.react||0);
  drawText(b.defeated?'VALE · ENGINE OFF':'DR. VALE · '+phase.name,480,32,18,b.defeated?'#a7f5b4':'#ffdd97');for(let i=0;i<3;i++)drawRect(354+i*86,47,72,8,b.defeated||i<b.phase?'#a7f5b4':i===b.phase?phase.color:'#4b4e68');if(b.defeated)return;
+ if(b.tauntLeft>0||b.transition)drawText('VALE: “'+(b.transition?.taunt||b.taunt)+'”',480,84,13,'#ffc4b6');
+ if(b.transition){const p=b.transition,q=p.elapsed/p.duration;ctx.save();if(!ambientReduced){ctx.globalAlpha=Math.sin(q*Math.PI)*.2;drawRect(0,0,960,540,p.color);ctx.globalAlpha=(1-q)*.7;ctx.strokeStyle=p.color;ctx.lineWidth=5;for(let n=0;n<3;n++){ctx.beginPath();ctx.arc(p.x,p.y,35+q*(130+n*65),0,Math.PI*2);ctx.stroke();}}ctx.globalAlpha=1;drawText(p.next===3?'ENGINE COLLAPSE!':['ARMOR SHATTERED!','SHIELD SHATTERED!'][p.next-1],480,133,27,'#ffe9ae');drawText(p.next===3?'THE CLASSROOM DOORWAY IS REOPENING':`PHASE ${p.next+1}/3 · PIP IS BRINGING YOU TO SAFETY`,480,159,12,'#ecf8f1');ctx.strokeStyle='#a7f5b4';ctx.lineWidth=3;ctx.beginPath();ctx.arc(450,428,31,0,Math.PI*2);ctx.stroke();ctx.restore();return;}
  target(t.x,t.y,phase.name+' '+b.hits+'/3',valeOpen()?phase.color:'#777b91',false);if(!valeOpen())drawText('CLOSED · DODGE FIRST',t.x,t.y+61,11,'#d3c7d8');
- if(b.warning){ctx.save();ctx.strokeStyle='#ffae83';ctx.lineWidth=3;ctx.setLineDash([8,6]);if(b.phase===0){drawRect(b.warning.x-35,448,70,5,'#ffae83');ctx.strokeRect(b.warning.x-35,365,70,82);drawText('! MOVE / JUMP',b.warning.x,353,12,'#ffdb95');}else if(b.phase===1){ctx.beginPath();ctx.moveTo(120,425);ctx.lineTo(810,425);ctx.stroke();drawText('! LOW WAVE · JUMP',480,405,12,'#ffdb95');}else{ctx.beginPath();ctx.moveTo(805,270);ctx.lineTo(b.warning.x,b.warning.y);ctx.stroke();drawText('! MOVE OUT OF THE LINE',480,110,12,'#ffdb95');}ctx.restore();}
+ if(b.warning){ctx.save();ctx.strokeStyle='#ffae83';ctx.lineWidth=3;ctx.setLineDash([8,6]);if(b.phase===0){drawRect(b.warning.x-35,448,70,5,'#ffae83');ctx.strokeRect(b.warning.x-35,365,70,82);drawText('! MOVE / JUMP',b.warning.x,353,12,'#ffdb95');}else if(b.phase===1){ctx.beginPath();ctx.moveTo(b.warning.sx??805,425);ctx.lineTo(b.warning.x,425);ctx.stroke();drawText('! LOW WAVE · JUMP',480,405,12,'#ffdb95');}else{ctx.beginPath();ctx.moveTo(b.warning.sx??805,b.warning.sy??270);ctx.lineTo(b.warning.x,b.warning.y);ctx.stroke();drawText('! MOVE OUT OF THE LINE',480,110,12,'#ffdb95');}ctx.restore();}
  for(const h of b.hazards){if(h.kind==='vent'){for(let n=0;n<8;n++)drawRect(h.x-24+(n%2)*24,440-n*8,22,12,n%2?'#ffd689':'#ff987a');}else{ctx.save();ctx.strokeStyle=h.kind==='wave'?'#ffda83':'#ffa88d';ctx.lineWidth=4;ctx.beginPath();ctx.arc(h.x,h.y,h.kind==='wave'?19:11,0,Math.PI*2);ctx.stroke();ctx.restore();}}
 }
 function toolName(){if(valeBattle())return valePhases[stage.boss.phase].kind.toUpperCase();return level===0?(stage.tool===0?'q = HEAT':'w = WORK'):level===2?'HEAT':level===4?'WEDGE':level===5?'REAGENT':level===6?['ENERGY','HEAT','REAGENT'][Math.min(stage.finalStep,2)]:'STUN BOLT';}
@@ -715,7 +739,8 @@ function stepPlayer(){
 }
 function stepProjectiles(){const alive=[];for(const p of projectiles){p.x+=p.vx;p.y+=p.vy;p.life--;if(p.kind==='wedge')p.vy+=.24;let hit=receiverHit(p);if(!hit){for(const e of enemies){if(Math.hypot(p.x-e.x,p.y-e.y)<25){e.stun=p.kind==='ice'?270:160;refund(p);burst(e.x,e.y,'#9fe7e1',9);hit=true;toast('DRONE STUNNED! Run past while it is asleep.');break;}}}if(!hit&&p.kind==='wedge'&&p.y>=floorAt(p.x)){if(level===4&&Math.abs(p.x-stage.boulder)<75){stage.anchored=true;milestone('WEDGE SET · Rest, recover, then keep pushing.');}else toast('Aim the curved line at the rock’s bottom, then THROW.');hit=true;}if(!hit&&(p.life<=0||p.x<0||p.x>960||p.y<30||p.y>580)){refund(p);hit=true;}if(!hit)alive.push(p);}projectiles=alive;}
 function stepEnemies(){for(const e of enemies){e.y=floorAt(e.x)-(level===3?90:28);if(e.stun>0){e.stun--;continue;}if(level===4){e.warning=(ticks+(e.min===645?0:90))%180<(save.character==='professor'?30:save.character==='student'?65:50);const sweep=(ticks+(e.min===645?0:90))%180;if(sweep>=(save.character==='professor'?30:save.character==='student'?65:50)&&sweep<110)e.x+=e.dir*1.8*character().speed;}else e.x+=e.dir*(level===6?1.5:1.1)*character().speed;if(e.x>e.max||e.x<e.min)e.dir*=-1;if(Math.abs(player.x-e.x)<29&&Math.abs(player.y-18-e.y)<29)hitPlayer('Drone bumped you');}if(level===2||level===6&&!stage.boss){for(const x of (level===2?[350,705]:[510])){const active=ventActive(x);if(active&&Math.abs(player.x-x)<24&&player.y>floorAt(player.x)-95)hitPlayer('Hot vent');}}}
-function stepGame(){ticks++;if(shotTimer>0)shotTimer--;if(powerTime>0)powerTime--;if(powerCooldown>0)powerCooldown--;if(controls.fire)shoot();stepPlayer();if(screen!=='play')return;stepEnemies();stepProjectiles();stepReactions();stepVale();for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.life--;}particles=particles.filter(p=>p.life>0);if(toastTimer>0&&--toastTimer===0)$('toast').classList.add('hidden');if(ticks%8===0)updateHUD();if(ticks%180===0)persistRun();}
+function stepEffects(){for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.life--;}particles=particles.filter(p=>p.life>0);if(toastTimer>0&&--toastTimer===0)$('toast').classList.add('hidden');if(ticks%8===0)updateHUD();if(ticks%180===0)persistRun();}
+function stepGame(){ticks++;if(valeBattle()&&stage.boss.transition){stepValeTransition();stepEffects();return;}if(shotTimer>0)shotTimer--;if(powerTime>0)powerTime--;if(powerCooldown>0)powerCooldown--;if(controls.fire)shoot();stepPlayer();if(screen!=='play')return;stepEnemies();stepProjectiles();stepReactions();stepVale();stepEffects();}
 function drawGround(){const l=worldPalette();for(let x=0;x<960;x+=8){const y=floorAt(x);if(!isGap(x)){drawRect(x,y,8,540-y,'#1b2b3f');drawRect(x,y,8,7,l.accent);}}for(let i=0;i<35;i++){const x=(i*83+3)%960;if(!isGap(x))drawRect(x,floorAt(x)+24+(i*31)%55,23,4,l.hill);}for(const p of platforms()){drawRect(p.x,p.y,p.w,13,l.hill);drawRect(p.x,p.y,p.w,5,l.accent);for(let z=p.x+7;z<p.x+p.w;z+=19)drawRect(z,p.y+10,11,4,'#1f3041');}if(level===3)for(const x of [432,695]){drawText(powerTime>0&&equipped===3?'ICE BRIDGE':'GAP',x+34,488,10,'#cbefff');}drawRect(92,floorAt(120)-7,57,7,'#83f0c5');drawText('START',120,floorAt(120)-55,10,'#a9f6d8');drawText('GO RIGHT →',120,floorAt(120)-41,9,'#f5ebc9');if(level===4&&checkpoint>=590){drawRect(590,floorAt(590)-64,4,64,'#f3dba1');drawRect(594,floorAt(590)-64,24,16,'#83f0c5');}}
 function drawPortal(){const x=894,y=floorAt(x)-77,col=stage.done?'#a6ffd3':'#8b9aaf';drawRect(x-28,y,59,78,'#1a2b43');drawRect(x-23,y-6,50,70,col);drawRect(x-18,y,40,64,stage.done?'#367e8c':'#26344d');if(stage.done){ctx.strokeStyle='#b3f7d2';ctx.lineWidth=3;ctx.strokeRect(x-10,y+12,20,40+Math.sin(ticks*.1)*5);}drawText(stage.done?'OPEN':'LOCKED',x,y-16,11,stage.done?'#b0ffd0':'#d1b4af');}
 function target(x,y,label,color,filled=false){ctx.save();ctx.shadowColor=filled?'#63caa4':color;ctx.shadowBlur=filled?0:15;drawRect(x-40,y-40,80,80,'#182d45');drawRect(x-36,y-36,72,72,filled?'#63caa4':color);ctx.shadowBlur=0;drawRect(x-29,y-29,58,58,'#223a53');ctx.strokeStyle=filled?'#bafbd8':color;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,22,0,Math.PI*2);ctx.stroke();drawText(filled?'✓':'◎',x,y+9,29,filled?'#bafbd8':color);drawText(label,x,y-47,12,'#fff0d0');ctx.restore();}
@@ -733,8 +758,11 @@ function drawShots(){for(const p of projectiles){const c=p.kind==='work'?'#80dce
 function drawFX(){for(const p of particles)drawRect(p.x,p.y,4,4,p.color);}
 let cinematicTime=0;
 function worldPalette(){return level===0&&!stage.glassesOn?{...levels[level],sky:'#25313b',hill:'#46545a',accent:'#87938d'}:levels[level];}
-function drawVale(x,y,scale=1){
- ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);drawRect(-13,-28,26,25,'#d9d8e8');drawRect(-6,-26,12,20,'#755b9c');drawRect(-10,-43,20,16,'#d7a278');drawRect(-11,-45,22,7,'#c7c9d7');drawRect(-6,-36,5,4,'#352d51');drawRect(3,-36,5,4,'#352d51');drawRect(-9,-4,7,7,'#242d48');drawRect(3,-4,7,7,'#242d48');drawRect(12,-25,5,16,'#d9d8e8');ctx.restore();
+function drawVale(x,y,scale=1,mood='calm',reaction=0){
+ ctx.save();ctx.translate(x,y);if(mood==='panic'&&!ambientReduced)ctx.rotate(Math.sin(reaction*.4)*.06);ctx.scale(scale,scale);drawRect(-13,-28,26,25,'#d9d8e8');drawRect(-6,-26,12,20,'#755b9c');drawRect(-10,-43,20,16,mood==='panic'?'#e7b18c':'#d7a278');drawRect(-11,-45,22,7,'#c7c9d7');drawRect(-6,-36,5,4,'#352d51');drawRect(3,-36,5,4,'#352d51');drawRect(-9,-4,7,7,'#242d48');drawRect(3,-4,7,7,'#242d48');
+ if(mood==='panic'){drawRect(-20,-39,6,19,'#d9d8e8');drawRect(14,-39,6,19,'#d9d8e8');drawRect(-20,-43,6,5,'#d7a278');drawRect(14,-43,6,5,'#d7a278');drawRect(-3,-30,7,5,'#563a51');}
+ else{drawRect(12,-25,5,16,'#d9d8e8');drawRect(-18,-23,6,14,'#d9d8e8');drawRect(-4,-30,8,2,'#563a51');}
+ if(mood!=='calm'){ctx.strokeStyle='#352d51';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-8,-39);ctx.lineTo(-1,-37);ctx.moveTo(2,-37);ctx.lineTo(9,-40);ctx.stroke();}ctx.restore();
 }
 function drawStoryScene(scene){
  if(scene==='awakening'){
@@ -931,6 +959,7 @@ function clearControls(){
 }
 function pressControl(name,source='direct'){
  unlockAudio();
+ if(valeBattle()&&stage.boss.transition)return;
  if(dialogue){if(['act','fire','jump','power','down'].includes(name))advanceSpeech();return;}
  if(screen!=='play')return;
  if(['left','right','up','down','fire','act'].includes(name)){inputHolds.set(source+':'+name,name);syncControls();}
@@ -1031,6 +1060,7 @@ function actionContext(){
 }
 function objectiveCue(){
  const cue=(x,y,kind,label,text,color='#ffda7c')=>({x,y,kind,label,text,color});
+ if(valeBattle()&&stage.boss.transition){const p=stage.boss.transition;return cue(450,428,'transition','PHASE BREAK',p.next===3?'Vale’s Engine is breaking down! Pip is reopening the doorway.':`Phase ${p.next+1}/3 incoming · Pip is bringing you to a safe central checkpoint.`,'#b7f5df');}
  if(valeBattle()){const b=stage.boss,t=valeTarget(),p=valePhases[b.phase];return cue(t.x,t.y,valeOpen()?'shoot':'wait',valeOpen()?p.label:'◷ CLOSED · DODGE',`VALE ${b.phase+1}/3 · ${p.hint} · ${b.hits}/3 hits`,valeOpen()?p.color:'#abb0c8');}
  if(level===0&&!stage.glassesOn)return stage.glassesFound?cue(player.x,player.y-65,'use','X WEAR · GLASSES','Glasses found! Tap X WEAR to reveal the hidden world.','#8beee4'):cue(stage.lensX,stage.lensY,'power','Y MAGNET · GLASSES','Tap Y MAGNET to pull the glowing glasses. Computer: F.','#8beee4');
  if(stage.done)return cue(894,floorAt(894)-40,'exit','→ GO HERE','Gate open! Follow the glowing exit →','#a6ffd3');
@@ -1049,6 +1079,7 @@ function objectiveCue(){
 }
 function nextTask(){return objectiveCue().text;}
 function tutorialTip(){
+ if(valeBattle()&&stage.boss.transition)return '';
  if(stage.done)return '';
  if(level!==0)return save.character==='student'?studentHint():'';
  if(!stage.glassesOn)return stage.glassesFound?'PUT THEM ON · Tap glowing X WEAR (E on a computer), or tap the glasses above your character.':equipped!==0?'GLASSES NEED MAGNET · Tap POWER INFO, choose MAGNET, then tap Y to pull them closer.':'FIRST DISCOVERY · Tap glowing Y MAGNET (F on a computer). It pulls the glasses to you. If you wandered away, move back toward their glow.';
@@ -1100,6 +1131,7 @@ function updateHUD(){
  positionGuidance();
 }
 function activatePower(){
+ if(valeBattle()&&stage.boss.transition)return;
  if(screen==='circuit'){if(equipped!==1||powerCooldown>0){$('circuitHint').textContent=equipped!==1?'Equip BURST to get pipe help, or turn pipes yourself.':'BURST is recharging. Keep turning pipes.';return;}let helped=0;for(let i=0;i<9&&helped<2;i++)if(stage.circuit[i]!==solvedCircuit[i]){stage.circuit[i]=solvedCircuit[i];helped++;}powerCooldown=240;persistRun();if(circuitConnected())testCircuit();else{showCircuit();$('circuitHint').textContent='BURST turned '+helped+' pipes for you. Follow the green connection!';}return;}
  if(screen!=='play'||dialogue)return;
  if(powerCooldown>0){toast('Your power is recharging. '+Math.ceil(powerCooldown/60)+'s to go.');return;}
@@ -1112,7 +1144,7 @@ function activatePower(){
  if(equipped===3){enemies.forEach(e=>{if(Math.abs(e.x-player.x)<320)e.stun=600;});message=level===3?'ICE BRIDGES OPEN for 10 seconds! Cross the gaps.':'ICE ON · Nearby drones are frozen!';}
  if(equipped===4)message='BOOST ON · Push twice as fast. You can also jump twice!';
  if(equipped===5)message=(level===5&&stage.reactors.some((r,i)=>r.loaded>=(i?1:2)&&gibbs(i)<0&&!r.done))||(level===6&&stage.coreLoaded)?'HURRY ON · Watch the machine fill three times faster!':'HURRY ON · Load a ready green machine to speed it up.';
- if(valeBattle()){if(equipped===1){stage.boss.stun=180;stage.boss.warning=null;stage.boss.attackTimer=0;message='BURST! Vale interrupted for 3 seconds. Keep aiming!';}else message=powerStatus();}toast(message);burst(player.x,player.y-20,powers[equipped].color,30);beep(980,.2,'triangle');updateHUD();
+ if(valeBattle()){if(equipped===1){stage.boss.stunPose=valePose();stage.boss.stun=180;stage.boss.warning=null;stage.boss.attackTimer=0;message='BURST! Vale interrupted for 3 seconds. Keep aiming!';}else message=powerStatus();}toast(message);burst(player.x,player.y-20,powers[equipped].color,30);beep(980,.2,'triangle');updateHUD();
 }
 function toggleTool(){if(level===0&&screen==='play'&&!dialogue){stage.tool=1-stage.tool;toast(stage.tool?'PUSH shots loaded → Aim at the BLUE target.':'WARM shots loaded → Aim at the ORANGE target.');updateHUD();}}
 function showHelp(){
@@ -1149,6 +1181,7 @@ function action(){
 }
 function shoot(){
  if(screen!=='play'||dialogue||shotTimer>0)return;
+ if(valeBattle()&&stage.boss.transition)return;
  if(level===0&&!stage.glassesOn){toast(stage.glassesFound?'Tap X WEAR to put on your glasses first.':'Use Y MAGNET to retrieve your glasses first.');return;}
  let kind='bolt',resource=null;
  if(level===0){kind=stage.tool===0?'heat':'work';resource='energy';}if(level===2)kind='heat';if(level===3)kind='ice';if(level===4)kind='wedge';if(level===5){kind='reagent';resource='reagents';}if(level===6){kind=['energy','heat','reagent'][Math.min(2,stage.finalStep)];resource=stage.finalStep===0?'energy':stage.finalStep===2?'reagents':null;}
@@ -1162,6 +1195,7 @@ function shoot(){
  beep(kind==='wedge'?300:620,.07);updateHUD();
 }
 function hitPlayer(reason){
+ if(valeBattle()&&stage.boss.transition)return;
  if(player.invincible>0)return;
  if(powerTime>0&&equipped===2){if(ticks%30===0)toast('SHIELD blocked that hit!');return;}
  clearControls();player.hp--;player.invincible=character().grace;player.vy=-4;player.onGround=false;beep(170,.13);
@@ -1173,6 +1207,7 @@ function stepReactions(){
  if(level===6&&stage.finalStep===2&&stage.coreLoaded&&30-stage.coreT*.12<0){stage.coreTime+=powerTime>0&&equipped===5?3:1;if(stage.coreTime>=300)beginValeBattle();}
 }
 function drawObjectiveGuide(){
+ if(valeBattle()&&stage.boss.transition)return;
  const goal=objectiveCue(),pulse=1+Math.sin(ticks*.045)*.08,shoot=goal.kind==='shoot',radius=goal.kind==='collect'?29:shoot?57:49;
  ctx.save();ctx.strokeStyle=goal.color;ctx.fillStyle=goal.color+'20';ctx.lineWidth=4;ctx.shadowColor=goal.color;ctx.shadowBlur=22;
  ctx.beginPath();ctx.arc(goal.x,goal.y,radius*pulse,0,Math.PI*2);ctx.fill();ctx.stroke();
