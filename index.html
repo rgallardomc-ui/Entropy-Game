@@ -85,6 +85,15 @@
 @media (max-width:355px) and (orientation:portrait){.controller-meta{width:195px;}.controller-meta #contextHint{position:absolute;top:-36px;width:100%;}.hud-quest{font-size:11px;}#hudPower{font-size:11px;}}
 
 .tutorial-focus{outline:3px solid #ffe49c!important;box-shadow:0 0 17px #ffe49c88!important;animation:tutorialPulse 1.2s ease-in-out infinite alternate}
+.tutorial-focus{position:relative;isolation:isolate;outline-width:4px!important;box-shadow:0 0 16px #ffe49c,0 0 38px #ffd46b99!important}
+.tutorial-focus::after{content:'';position:absolute;inset:-7px;border:3px solid #8ff7e4;border-radius:12px;pointer-events:none;animation:guideBurst 1.8s ease-out infinite}
+@keyframes guideBurst{from{transform:scale(1);opacity:.9}to{transform:scale(1.32);opacity:0}}
+.tutorial-action{display:block;font:bold 17px monospace;color:#ffe49c;margin-bottom:3px}.tutorial-purpose{font-size:13px;color:#cff4ed}
+#speech[data-voice="pip"]{background:#e8faf0;border-color:#378c8b}#speech[data-voice="professor"]{background:#f0eaff;border-color:#8168b4}#speech[data-voice="vale"]{background:#fff0e9;border-color:#a6556d}
+.speech-key{background:none;padding:0;color:#a44339;font-weight:bold}.speech-key.energy{color:#197056}.speech-key.work{color:#235e9a}
+#speech.line-enter[data-shot="0"]{animation:dialogueSlide .4s ease-out}#speech.line-enter[data-shot="1"]{animation:dialogueRise .4s ease-out}#speech.line-enter[data-shot="2"]{animation:dialoguePop .4s ease-out}
+@keyframes dialogueSlide{from{opacity:.3;translate:-15px 0}to{opacity:1;translate:0 0}}@keyframes dialogueRise{from{opacity:.3;translate:0 9px}to{opacity:1;translate:0 0}}@keyframes dialoguePop{from{opacity:.3;scale:.98}to{opacity:1;scale:1}}
+@media(prefers-reduced-motion:reduce){.tutorial-focus,.tutorial-focus::after,#speech.line-enter{animation:none!important}.tutorial-focus::after{opacity:.8}}
 @keyframes tutorialPulse{to{outline-color:#8debd6;box-shadow:0 0 24px #8debd688}}
 #tutorialTip{position:absolute;top:112px;left:14px;z-index:7;max-width:370px;padding:9px 12px;background:#172c46ed;border:2px solid #ffe49c;color:#fff0c6;font:12px/1.45 monospace;pointer-events:none}
 #tutorialTip.hidden{display:none!important}
@@ -186,7 +195,7 @@
 <div id="controllerDock">
 <div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small id="jumpLabel">JUMP</small></button></div></div>
 <div id="aimHint" class="hidden">↑ ↓ AIM · SPACE JUMP · J FIRE · E ACT · F POWER</div>
-</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v4.3</span>
+</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v4.4</span>
 </div></div>
 <script>
 
@@ -203,7 +212,7 @@ const levels=[
 {title:'THE HEART OF THE UNIVERSE',world:'The Final Core',badge:'🌌',suit:'#ead8ff',sky:'#30224f',hill:'#634f8d',accent:'#dcc0ff',topic:'All Laws · State Functions · Spontaneity',task:'Restore the three core modules in order, then reach the portal.',intro:[['PIP','We made it, Flux! The heart of the universe is right here.'],['FLUX','Three broken modules. One final chance.'],['PIP','Energy, entropy, and free energy... everything we learned will help us fix this!']],end:'You restored the Core by conserving energy, respecting the natural direction of heat flow, and finding favorable conditions for a reaction. Thermodynamics helps predict which changes are possible and which direction is favored—not necessarily how fast they occur.',upgrade:'Master of thermodynamics',science:'Final synthesis: First, Second, and Third Laws; q and w; state functions; spontaneity and ΔG = ΔH − TΔS.'}
 ];
 
-const VERSION='4.3',INSTRUCTIONS_VERSION='3.1';
+const VERSION='4.4',INSTRUCTIONS_VERSION='3.1';
 const STORAGE='entropy-quest-save-v1';
 const powers=[
  {id:'magnet',name:'ENERGY MAGNET',icon:'✦',color:'#fbd277',help:'Pulls nearby loose sparks and supply crystals toward you for 7 seconds.',lesson:'The magnet moves supplies; it does not create energy.'},
@@ -437,8 +446,12 @@ function speakerPortrait(name){
  `<path d="M9 64 Q10 47 32 47 Q54 47 55 64" fill="${vale?'#755b9c':characters[id].color}"/><rect x="16" y="17" width="32" height="34" rx="9" fill="${vale?'#d7a278':look.skin}"/><path d="M14 27 V17 Q17 5 33 8 Q52 7 50 27 L45 21 L20 21 Z" fill="${vale?'#c7c9d7':look.hair}"/>${id==='professor'&&!vale?'<path d="M15 20 L16 12 L23 13 L26 4 L32 9 L37 2 L40 10 L47 9 L49 20" fill="#c7b78b"/><g fill="none" stroke="#17212c" stroke-width="2.5"><rect x="15" y="25" width="16" height="12" rx="3"/><rect x="34" y="25" width="16" height="12" rx="3"/><path d="M31 29 H34"/></g>':''}<rect x="23" y="29" width="4" height="4" fill="#20344b"/><rect x="38" y="29" width="4" height="4" fill="#20344b"/>${vale?'<path d="M20 26 L29 28 M36 28 L45 25" stroke="#352d51" stroke-width="3"/>':''}<ellipse class="portrait-mouth" cx="32" cy="42" rx="5" ry="1.5" fill="#7c4b46"/>`;
  return `<svg class="speaker-portrait ${pip?'pip-portrait':''}" viewBox="0 0 64 64" aria-hidden="true">${body}</svg>`;
 }
-function say(lines,onEnd){clearControls();$('tutorialTip').classList.add('hidden');$('speechFace').dataset.speakerKey='';dialogue={lines:characterDialogue(lines),index:0,shown:0,onEnd:onEnd||null};$('speech').classList.remove('hidden');renderSpeech();}
-function renderSpeech(){if(!dialogue)return;positionGuidance();const [name,text]=dialogue.lines[dialogue.index],face=$('speechFace');$('speechSpeaker').textContent=name;if(face.dataset.speakerKey!==name){face.innerHTML=speakerPortrait(name);face.dataset.speakerKey=name;face.classList.remove('speaker-enter');void face.offsetWidth;face.classList.add('speaker-enter');if(name==='PIP')pipEntrance=0;}face.dataset.talking=dialogue.shown<text.length?'true':'false';$('speechText').textContent=text.slice(0,Math.floor(dialogue.shown));$('speechNext').textContent=dialogue.shown<text.length?'TAP TO REVEAL ▾':'TAP TO CONTINUE ▾';}
+function say(lines,onEnd){clearControls();$('tutorialTip').classList.add('hidden');$('speechFace').dataset.speakerKey='';$('speech').dataset.lineKey='';dialogueTimer=0;dialogue={lines:characterDialogue(lines),index:0,shown:0,onEnd:onEnd||null};$('speech').classList.remove('hidden');renderSpeech();}
+function coloredSpeech(text){const safe=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');return safe.replace(/\b(heat|warm|cool|hot|cooler|hotter|energy|magnet|shield|work|push|reaction|conditions|temperature)\b/gi,word=>'<mark class="speech-key '+(/energy|magnet|shield/i.test(word)?'energy':/work|push/i.test(word)?'work':'')+'">'+word+'</mark>');}
+function renderSpeech(){if(!dialogue)return;positionGuidance();const [name,text]=dialogue.lines[dialogue.index],face=$('speechFace'),card=$('speech'),lineKey=name+':'+dialogue.index+':'+text;
+ const voice=name==='PIP'?'pip':name.includes('AARONS')?'professor':name==='DR. VALE'?'vale':'hero';card.dataset.voice=voice;
+ if(card.dataset.lineKey!==lineKey){card.dataset.lineKey=lineKey;card.dataset.shot=String((dialogue.index+(voice==='vale'?2:voice==='professor'?1:0))%3);card.classList.remove('line-enter');void card.offsetWidth;card.classList.add('line-enter');}
+ $('speechSpeaker').textContent=name;if(face.dataset.speakerKey!==name){face.innerHTML=speakerPortrait(name);face.dataset.speakerKey=name;face.classList.remove('speaker-enter');void face.offsetWidth;face.classList.add('speaker-enter');if(name==='PIP')pipEntrance=0;}face.dataset.talking=dialogue.shown<text.length?'true':'false';const shown=text.slice(0,Math.floor(dialogue.shown));$('speechText').textContent=shown;$('speechText').innerHTML=coloredSpeech(shown);$('speechNext').textContent=dialogue.shown<text.length?'TAP TO REVEAL ▾':'TAP TO CONTINUE ▾';}
 function advanceSpeech(){if(!dialogue)return;const text=dialogue.lines[dialogue.index][1];if(dialogue.shown<text.length){dialogue.shown=text.length;renderSpeech();return;}if(dialogue.index<dialogue.lines.length-1){dialogue.index++;dialogue.shown=0;renderSpeech();return;}const done=dialogue.onEnd;dialogue=null;clearControls();$('speech').classList.add('hidden');if(done)done();positionGuidance();}
 function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');toastTimer=220;}
 let lessonFocus=null;
@@ -451,13 +464,24 @@ const learningMoments=[
  {x:640,y:365,title:'THE GARDEN GROWS!',rule:'RIGHT CONDITIONS LET IT GROW',icon:'garden'},
  {x:595,y:365,title:'HEAT MOVED!',rule:'HOT → COOL',icon:'heat'}
 ];
+const professorAsides=[
+ 'Warmth and a push. Energy paid the bill!',
+ 'Motion AND warmth. No disappearing-energy tricks!',
+ 'Hot to cool. Heat needs help to go uphill!',
+ 'Closer to zero, not at zero. Nice try, Vale!',
+ 'You lift it; it stores energy. Heavy homework!',
+ 'Conditions first. Speed second. Even seeds have standards!',
+ 'Send warmth to something cooler. You know this one!'
+];
+function beginLearningMoment(moment,key){stage.learningSeen=stage.learningSeen||{};if(stage.learningSeen[key]||lessonFocus)return false;stage.learningSeen[key]=true;lessonFocus={...moment,elapsed:0,duration:210};clearControls();$('tutorialTip').classList.add('hidden');$('toast').classList.add('hidden');toastTimer=0;updateHUD();persistRun();return true;}
 function maybeLearningMoment(){
  if(lessonFocus||stage.shift||stage.labDemo||stage.boss||!stage.initialized)return;
+ if(level===0&&!stage.done&&stage.q>0){beginLearningMoment({x:735,y:415,title:'WARMTH DELIVERED!',rule:'HEAT TRANSFERS ENERGY',quip:'You sent warmth. The other lock needs a PUSH!',icon:'heat'},'warm');return;}
+ if(level===5&&!stage.done){for(let i=0;i<2;i++)if(stage.reactors[i].loaded>0&&gibbs(i)<0&&!stage.learningSeen?.['seed'+i]){beginLearningMoment({x:i?760:520,y:395,title:i?'B LIKES COOL':'A LIKES WARM',rule:i?'COOL FAVORS REACTION B':'WARMTH FAVORS REACTION A',quip:i?'B releases heat and makes order. Cool helps it go!':'A absorbs heat and spreads energy. Warmth helps it go!',icon:'garden'},'seed'+i);return;}}
  const ready=level===6?stage.finalStep===2:stage.done;if(!ready)return;
- stage.learningSeen=stage.learningSeen||{};const key=level===6?'heat':'complete';if(stage.learningSeen[key])return;
- stage.learningSeen[key]=true;lessonFocus={...learningMoments[level],elapsed:0,duration:72};clearControls();$('tutorialTip').classList.add('hidden');$('toast').classList.add('hidden');toastTimer=0;updateHUD();
+ beginLearningMoment({...learningMoments[level],quip:professorAsides[level]},level===6?'heat':'complete');
 }
-function endLearningMoment(){lessonFocus=null;clearControls();$('toast').classList.add('hidden');updateHUD();}
+function endLearningMoment(){lessonFocus=null;shotTimer=0;clearControls();$('toast').classList.add('hidden');updateHUD();}
 function stepLearningMoment(){if(screen!=='play'||dialogue||document.hidden)return;lessonFocus.elapsed++;if(lessonFocus.elapsed>=lessonFocus.duration)endLearningMoment();}
 function milestone(message){checkpoint=level===4?(stage.boulderRest===475?90:stage.boulderRest-40):Math.max(checkpoint,Math.min(800,stage.safeX||90));stage.checkpoint=checkpoint;toast(message);beep(820,.17);maybeLearningMoment();persistRun();}
 function actionWords(goal=objectiveCue()){
@@ -688,7 +712,7 @@ function drawTinyFlux(x,y,color,scale=1,dir=1,heroId=save.character,showLenses=s
  ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(dir*scale,scale);
  const r=(a,b,w,h,c)=>drawRect(a,b,w,h,c);
  const walking=screen==='play'&&!dialogue&&!thermoFinale()&&scale===1&&Math.abs(player.vx)>.15,time=ambientReduced?0:cinematicTime,swing=walking&&!ambientReduced?Math.sin(time*.3)*9:0;
- const speaker=dialogue?.lines[dialogue.index][0]||(screen==='prologue'?classroomIntro[classroomPage]?.[0]:'')||'',talking=thermoFinale()?.mode==='memory'&&heroId===save.character||speaker.includes(heroId==='professor'?'AARONS':heroId==='student'?'JOHN':'FLUX');
+ const speaker=dialogue?.lines[dialogue.index][0]||(screen==='prologue'?classroomIntro[classroomPage]?.[0]:'')||'',talking=!!lessonFocus&&heroId==='professor'||thermoFinale()?.mode==='memory'&&heroId===save.character||speaker.includes(heroId==='professor'?'AARONS':heroId==='student'?'JOHN':'FLUX');
  const gesture=talking&&!ambientReduced?Math.sin(time*.12)*7:0,trail=ambientReduced?0:walking?-9-Math.sin(time*.3)*4:Math.sin(time*.08)*2;
  if(walking)ctx.translate(0,-Math.abs(swing)*.25);
  const student=heroId==='student',professor=heroId==='professor',coat=student?'#7acbee':professor?'#eee5fa':'#eaf1e8';
@@ -1064,7 +1088,8 @@ function drawStoryScene(scene){
  if(screen==='ending'){drawText('WELCOME HOME',480,75,24,'#a8e7cf');if(save.character==='student')drawText('A ★',209,414,13,'#ad5571');if(save.character==='flux')drawText('★ RECOMMENDATION',660,401,11,'#ffe49c');}
  if(scene==='rupture'){for(let n=0;n<3;n++){const radius=(cinematicTime*2+n*65)%240;ctx.save();ctx.globalAlpha=1-radius/240;ctx.strokeStyle='#b7f4e9';ctx.lineWidth=6;ctx.beginPath();ctx.arc(786,300,radius,0,Math.PI*2);ctx.stroke();ctx.restore();}drawText('ENERGY ROUTES UNSTABLE',480,50,20,'#ffd786');}
 }
-function learningCamera(){const f=lessonFocus,p=f.elapsed/f.duration,pan=ambientReduced?0:Math.sin(Math.PI*p),z=1+pan*.65,cx=Math.max(480/z,Math.min(960-480/z,480+(f.x-480)*pan)),cy=Math.max(270/z,Math.min(540-270/z,270+(f.y-270)*pan));return {z,cx,cy,x:480+(f.x-cx)*z,y:270+(f.y-cy)*z};}
+function learningEnvelope(f=lessonFocus){const t=f.elapsed,d=f.duration,r=t<36?t/36:t>d-36?(d-t)/36:1;return Math.max(0,Math.min(1,r*r*(3-2*r)));}
+function learningCamera(){const f=lessonFocus,p=f.elapsed/f.duration,pan=ambientReduced?0:learningEnvelope(f),z=1+pan*.65,cx=Math.max(480/z,Math.min(960-480/z,480+(f.x-480)*pan)),cy=Math.max(270/z,Math.min(540-270/z,270+(f.y-270)*pan));return {z,cx,cy,x:480+(f.x-cx)*z,y:270+(f.y-cy)*z};}
 function drawGame(){
  if(stage.shift){drawWorldShift();return;}
  if(thermoFinale()){drawThermoFinale();drawFX();return;}
@@ -1080,11 +1105,17 @@ function drawGame(){
  if(stage.lensReveal>0||scene==='awakened')for(let n=0;n<3;n++){const radius=(cinematicTime*3+n*80)%260;ctx.save();ctx.strokeStyle='#8beee4';ctx.globalAlpha=(1-radius/260)*.8;ctx.lineWidth=4;ctx.beginPath();ctx.arc(player.x,player.y-32,radius+28,0,Math.PI*2);ctx.stroke();ctx.restore();}
  if(stage.labDemo)drawLabPreparation();ctx.restore();if(lessonFocus)drawLearningMoment();
 }
-function drawLearningMoment(){const f=lessonFocus;if(!f)return;ctx.save();drawRect(0,0,960,58,'#0b1936ed');drawText(f.title,480,38,30,'#ffe49c');drawRect(80,446,800,76,'#0b1936ed');drawText(f.rule,480,478,26,'#a4f6df');drawText('TAP TO SKIP · THEN KEEP PLAYING',480,504,14,'#c6d8ea');
- const phase=ambientReduced?.5:f.elapsed/f.duration,c=learningCamera();if(!ambientReduced){ctx.strokeStyle='#8dece2';ctx.lineWidth=5;ctx.beginPath();ctx.arc(c.x,c.y,65+phase*20,0,Math.PI*2);ctx.stroke();}
- // A short visual cause-and-effect trace, without another formula to decode.
- ctx.strokeStyle=f.icon==='heat'?'#ffb783':'#9beef2';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(c.x-85,c.y);ctx.lineTo(c.x+85,c.y);ctx.lineTo(c.x+66,c.y-17);ctx.moveTo(c.x+85,c.y);ctx.lineTo(c.x+66,c.y+17);ctx.stroke();drawRect(c.x-85+Math.min(1,phase*2)*170,c.y-7,14,14,'#fff0a5');ctx.restore();}
-function animate(t){requestAnimationFrame(animate);pollGamepad();const dt=Math.min(100,Math.max(0,t-last));last=t;advanceAmbient(dt);if(!document.hidden)pipEntrance=Math.min(1,pipEntrance+dt/700);cinematicTime+=dt/16.67*(thermoFinale()?.mode==='memory'?.25:1);if(screen==='play'&&stage.lensReveal>0)stage.lensReveal=Math.max(0,stage.lensReveal-dt*.04);if(screen==='play'&&!dialogue&&!document.hidden){accumulator+=dt;while(accumulator>=1000/60){stepGame();accumulator-=1000/60;if(screen!=='play')break;}}else accumulator=0;if(screen==='circuit'&&!document.hidden&&powerCooldown>0)powerCooldown=Math.max(0,powerCooldown-dt*60/1000);if(screen==='play')drawGame();else{ticks++;drawMenuBackdrop();}if(dialogue&&screen==='play'&&dt>0){const text=dialogue.lines[dialogue.index][1];dialogueTimer+=dt;if(dialogue.shown<text.length&&dialogueTimer>=18){dialogue.shown=Math.min(text.length,dialogue.shown+Math.floor(dialogueTimer/18));dialogueTimer=0;renderSpeech();}}}
+function drawBriefLines(text,x,y,width=660,size=16){const limit=Math.floor(width/(size*.62)),lines=[''];for(const word of text.split(' ')){if((lines.at(-1)+' '+word).trim().length>limit)lines.push(word);else lines[lines.length-1]=(lines.at(-1)+' '+word).trim();}for(let i=0;i<Math.min(2,lines.length);i++)drawText(lines[i],x,y+i*(size+5),size,'#e9f2f3');}
+function drawLearningMoment(){const f=lessonFocus;if(!f)return;const c=learningCamera(),phase=ambientReduced?.5:f.elapsed/f.duration;
+ ctx.save();drawRect(0,0,960,58,'#0b1936ed');drawText(f.title,480,38,30,'#ffe49c');
+ if(!ambientReduced){ctx.strokeStyle=f.icon==='heat'?'#ffb783':'#8dece2';ctx.lineWidth=4;for(let n=0;n<2;n++){ctx.globalAlpha=.45*(1-phase);ctx.beginPath();ctx.arc(c.x,c.y,58+phase*115+n*24,0,Math.PI*2);ctx.stroke();}ctx.globalAlpha=1;}
+ ctx.strokeStyle=f.icon==='heat'?'#ffb783':'#9beef2';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(c.x-85,c.y);ctx.lineTo(c.x+85,c.y);ctx.lineTo(c.x+66,c.y-17);ctx.moveTo(c.x+85,c.y);ctx.lineTo(c.x+66,c.y+17);ctx.stroke();drawRect(c.x-85+Math.min(1,phase*3)*170,c.y-7,14,14,'#fff0a5');
+ drawRect(190,399,750,130,'#0b1936f2');ctx.strokeStyle='#bdb3f4';ctx.lineWidth=3;ctx.strokeRect(190,399,750,130);drawText(f.rule,565,430,25,'#a4f6df');
+ if(f.elapsed>=32){const q=ambientReduced?1:Math.max(0,Math.min(1,(f.elapsed-32)/20)),ease=q*q*(3-2*q),x=ambientReduced?112:-80+192*ease;
+  drawTinyFlux(x,492,'#c6b3ef',2.9,1,'professor',true);drawRect(x-78,316,156,34,'#ffe49c');drawText('BECAUSE…',x,340,20,'#27324b');drawText('PROF. AARONS',x,365,12,'#f8d793');drawBriefLines(f.quip||professorAsides[level],565,459,660,16);
+ }
+ drawText('TAP TO CONTINUE · OR WATCH',565,517,13,'#c6d8ea');ctx.restore();}
+function animate(t){requestAnimationFrame(animate);pollGamepad();const dt=Math.min(100,Math.max(0,t-last));last=t;advanceAmbient(dt);if(!document.hidden)pipEntrance=Math.min(1,pipEntrance+dt/700);cinematicTime+=dt/16.67*(thermoFinale()?.mode==='memory'?.25:1);if(screen==='play'&&stage.lensReveal>0)stage.lensReveal=Math.max(0,stage.lensReveal-dt*.04);if(screen==='play'&&!dialogue&&!document.hidden){accumulator+=dt;while(accumulator>=1000/60){stepGame();accumulator-=1000/60;if(screen!=='play')break;}}else accumulator=0;if(screen==='circuit'&&!document.hidden&&powerCooldown>0)powerCooldown=Math.max(0,powerCooldown-dt*60/1000);if(screen==='play')drawGame();else{ticks++;drawMenuBackdrop();}if(dialogue&&screen==='play'&&dt>0){const text=dialogue.lines[dialogue.index][1];dialogueTimer+=dt;if(dialogue.shown<text.length&&dialogueTimer>=24){dialogue.shown=Math.min(text.length,dialogue.shown+Math.floor(dialogueTimer/24));dialogueTimer=0;renderSpeech();}}}
 $('overlay').addEventListener('click',e=>{const b=e.target.closest('[data-act],[data-level],[data-gear],[data-pipe],[data-temp],[data-bind],[data-character],[data-prologue-character]');if(!b||b.disabled)return;if(b.dataset.act==='menuSound'){handleMenuMusic(b.dataset.menuMusic);return;}unlockAudio().then(()=>beep(500,.06));if(b.hasAttribute('data-prologue-character')){choosePrologueHero(b.dataset.prologueCharacter);return;}if(b.hasAttribute('data-character')){selectCharacter(b.dataset.character);return;}if(b.hasAttribute('data-bind')){pendingBinding=b.dataset.bind;showBindings();return;}if(b.hasAttribute('data-level')){if(!save.characterChosen&&!Object.keys(save.runs).length&&!save.completed.length)beginClassroomPrologue('start');else startLevel(Number(b.dataset.level));return;}if(b.hasAttribute('data-gear')){if(equipped!==Number(b.dataset.gear))powerTime=0;equipped=Number(b.dataset.gear);save.gear=equipped;if(stage.initialized)persistRun();else store();b.dataset.return==='resume'?resumeGame():showMenu();return;}if(b.hasAttribute('data-pipe')){const i=Number(b.dataset.pipe);stage.circuit[i]=rotatePipe(stage.circuit[i]);persistRun();if(circuitConnected())testCircuit();else showCircuit();return;}if(b.hasAttribute('data-temp')){chooseTemperature(Number(b.dataset.temp));return;}switch(b.dataset.act){case 'routeGentle':chooseRouteExperiment(false);break;case 'routeRough':chooseRouteExperiment(true);break;case 'narration':save.narration=save.narration===false;stopRuleVoice();store();showSettings();break;case 'help':showHelp();break;case 'bindings':showBindings();break;case 'defaultKeys':save.keys={};pendingBinding=null;store();showBindings();break;case 'storyIntro':beginClassroomPrologue('switch');break;case 'storyNext':showStoryIntro(storyPage+1);break;case 'classroomNext':advanceClassroomPrologue();break;case 'characters':showCharacters();break;case 'continue':continueGame();break;case 'new':beginClassroomPrologue('new');break;case 'menu':showMenu();break;case 'map':showMap();break;case 'settings':showSettings();break;case 'about':showAbout();break;case 'journal':showJournal();break;case 'gear':showGear();break;case 'resume':resumeGame();break;case 'sound':toggleSound();showSettings();break;case 'music':save.music=!save.music;store();if(save.music)unlockAudio();else stopAudioNotes();updateSoundLabel();showSettings();break;case 'ambient':save.ambient=save.ambient===false;store();showSettings();break;case 'controller':save.controller=!save.controller;store();showSettings();break;case 'testSound':save.sound=true;store();unlockAudio(true,true).then(()=>{tone(523,.22,'triangle',.12);tone(659,.22,'triangle',.12,.22);tone(784,.3,'triangle',.12,.44);const status=$('audioStatus');if(status)status.textContent=audioCtx?.state==='running'?'♪ Sound test played. If silent, check device volume and silent mode.':'Tap TEST SOUND again to start audio.';});break;case 'next':startLevel(Math.min(6,level+1));break;case 'testCircuit':testCircuit();break;case 'circuitPower':activatePower();break;case 'reset':if(confirm('Erase this browser’s progress?')){save=freshSave();stage={};store();showSettings();}break;}});
 $('pauseBtn').addEventListener('click',pauseGame);$('journalBtn').addEventListener('click',showJournal);$('soundBtn').addEventListener('click',handleAudioButton);$('gearBtn').addEventListener('click',showGear);$('toolBtn').addEventListener('click',toggleTool);$('speech').addEventListener('click',advanceSpeech);
 const keyMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'up',ArrowDown:'down',Space:'jump',KeyW:'jump',KeyJ:'fire',KeyE:'act',KeyF:'power'};
@@ -1250,8 +1281,8 @@ function pressControl(name,source='direct'){
  if(dialogue){if(['act','fire','jump','power','down'].includes(name))advanceSpeech();return;}
  if(screen!=='play')return;
  if(['left','right','up','down','fire','act'].includes(name)){inputHolds.set(source+':'+name,name);syncControls();}
- if(name==='up'||name==='down'){aim=Math.max(-.55,Math.min(1.3,aim+(name==='up'?1:-1)*.035));updateHUD();}
- if(name==='jump')jumpQueued=true;
+ if(name==='up'||name==='down'){if(level===0&&stage.glassesOn)stage.tutorialAim=true;aim=Math.max(-.55,Math.min(1.3,aim+(name==='up'?1:-1)*.035));updateHUD();}
+ if(name==='jump'){if(level===0&&stage.glassesOn)stage.tutorialJump=true;jumpQueued=true;}
  if(name==='fire')shoot();
  if(name==='act')action();
  if(name==='power')activatePower();
@@ -1369,17 +1400,18 @@ function objectiveCue(){
  return cue(745,393,'wait','◷ WAKING UP','The heart is waking up! Wait, or use Y HURRY.','#c0a3ef');
 }
 function nextTask(){return objectiveCue().text;}
-function tutorialTip(){
- if(thermoFinale()||stage.labDemo)return '';
- if(valeBattle()&&stage.boss.transition)return '';
- if(stage.done)return '';
- if(level!==0)return save.character==='student'?studentHint():'';
- if(!stage.glassesOn)return stage.glassesFound?'X WEAR · Put on the safety goggles.':equipped!==0?'Choose MAGNET in POWER INFO. Then tap Y.':'Tap Y MAGNET near the glowing goggles.';
- if(!stage.tutorialInfo)return 'POWER INFO · Choose powers. More unlock as you explore.';
- if(!stage.tutorialPower&&pickups.some(p=>!p.taken))return 'Y MAGNET · Pull nearby sparks closer.';
- if(pickups.every(p=>p.taken)&&stage.q+stage.w===0)return '↑ ↓ AIM · B SHOOT · Orange: WARM. Blue: PUSH.';
- return save.character==='student'?studentHint():'';
+function tutorialPrompt(){
+ if(level!==0||stage.done||lessonFocus||stage.shift||stage.labDemo)return null;
+ const p=(targets,title,why)=>({targets:Array.isArray(targets)?targets:[targets],title,why});
+ if(!stage.glassesOn){if(stage.glassesFound)return p('act','X WEAR','Safety goggles reveal the hidden world.');return equipped===0?p('powerControl','Y MAGNET','Pull the glowing goggles closer.'):p('gearBtn','CHOOSE MAGNET','Open POWER INFO. Choose the pulling power.');}
+ if(!stage.tutorialInfo&&stage.q+stage.w===0)return p('gearBtn','POWER INFO','Choose tools here. Repair worlds to unlock more.');
+ if(!stage.tutorialPower&&pickups.some(p=>!p.taken))return equipped===0?p('powerControl','Y MAGNET','Pull nearby sparks—even off platforms!'):p('gearBtn','CHOOSE MAGNET','This power brings the sparks to you.');
+ if(pickups.some(p=>!p.taken))return !stage.tutorialJump?p('jump','A JUMP','Reach the higher sparks. Y MAGNET helps too.'):null;
+ if(stage.q<2){if(stage.tool!==0)return p('toolBtn','CHOOSE WARM','This target needs warmth, not a shove.');if(!stage.tutorialAim&&stage.q===0)return p(['up','down'],'↑ ↓ AIM','Point the dotted line at orange.');return p('fire','B SEND HEAT','A WARM shot transfers energy as heat.');}
+ if(stage.w<1)return stage.tool!==1?p('toolBtn','CHOOSE PUSH','The blue lock needs a shove. That is WORK.'):p('fire','B SEND A PUSH','A push moves the lock and transfers energy.');return null;
 }
+function tutorialButton(target){return ['gearBtn','toolBtn','powerControl'].includes(target)?$(target):document.querySelector('[data-control="'+target+'"]');}
+function tutorialTip(){if(lessonFocus||thermoFinale()||stage.labDemo||stage.boss?.transition||stage.done)return '';if(level===0){const p=tutorialPrompt();if(p)return p.title+' · '+p.why;}return save.character==='student'?studentHint():'';}
 function studentHint(){
  const goal=objectiveCue();
  if(goal.kind==='collect')return 'Follow the glow. A jumps. Y MAGNET pulls items.';
@@ -1390,11 +1422,10 @@ function studentHint(){
  return '';
 }
 function updateTutorial(){
- const tip=tutorialTip(),visible=screen==='play'&&!dialogue&&!!tip;
+ const prompt=tutorialPrompt(),tip=tutorialTip(),visible=screen==='play'&&!dialogue&&!!tip;
+ for(const target of ['gearBtn','toolBtn','powerControl','act','jump','fire','up','down'])tutorialButton(target)?.classList.remove('tutorial-focus');
  $('tutorialTip').textContent=tip;$('tutorialTip').classList.toggle('hidden',!visible);
- $('gearBtn').classList.toggle('tutorial-focus',visible&&level===0&&(!stage.glassesOn&&!stage.glassesFound&&equipped!==0||stage.glassesOn&&!stage.tutorialInfo));
- $('powerControl').classList.toggle('tutorial-focus',visible&&level===0&&(!stage.glassesOn&&!stage.glassesFound&&equipped===0||stage.glassesOn&&stage.tutorialInfo&&!stage.tutorialPower));
- document.querySelector('[data-control="act"]')?.classList.toggle('tutorial-focus',visible&&stage.glassesFound&&!stage.glassesOn);
+ if(visible&&prompt){$('tutorialTip').innerHTML='<strong class="tutorial-action">'+prompt.title+'</strong><span class="tutorial-purpose">'+prompt.why+'</span>';for(const target of prompt.targets)tutorialButton(target)?.classList.add('tutorial-focus');}
 }
 function powerStatus(){
  if(thermoFinale())return 'Cinematic experiment · use X / B. Powers resume after the sequence.';
