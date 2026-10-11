@@ -70,6 +70,7 @@
 .controller-meta{width:126px;margin-bottom:18px;}
 .touch-btn.available{border-color:#ffe599;box-shadow:0 0 10px #ffdf7555;background:#937644;}
 .touch-btn.running{background:#4c9769;box-shadow:0 0 13px #8cf6bd88;}
+.touch-btn:disabled{opacity:.3;cursor:default;box-shadow:none}#gearBtn:disabled{opacity:.45;cursor:default}
 .touch-btn small{font-size:8px;}
 .pipe svg{display:block;width:100%;height:100%;}
 .pipe svg path{stroke:#9bd6e7;stroke-width:9;stroke-linecap:round;}
@@ -181,9 +182,9 @@
 <div id="tutorialTip" class="hidden" role="status"></div></div></div>
 <div id="overlay"></div>
 <div id="controllerDock">
-<div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small>JUMP</small></button></div></div>
+<div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small id="jumpLabel">JUMP</small></button></div></div>
 <div id="aimHint" class="hidden">↑ ↓ AIM · SPACE JUMP · J FIRE · E ACT · F POWER</div>
-</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.8</span>
+</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.9</span>
 </div></div>
 <script>
 
@@ -200,7 +201,7 @@ const levels=[
 {title:'THE HEART OF THE UNIVERSE',world:'The Final Core',badge:'🌌',suit:'#ead8ff',sky:'#30224f',hill:'#634f8d',accent:'#dcc0ff',topic:'All Laws · State Functions · Spontaneity',task:'Restore the three core modules in order, then reach the portal.',intro:[['PIP','We made it, Flux! The heart of the universe is right here.'],['FLUX','Three broken modules. One final chance.'],['PIP','Energy, entropy, and free energy... everything we learned will help us fix this!']],end:'You restored the Core by conserving energy, respecting the natural direction of heat flow, and finding favorable conditions for a reaction. Thermodynamics helps predict which changes are possible and which direction is favored—not necessarily how fast they occur.',upgrade:'Master of thermodynamics',science:'Final synthesis: First, Second, and Third Laws; q and w; state functions; spontaneity and ΔG = ΔH − TΔS.'}
 ];
 
-const VERSION='3.8',INSTRUCTIONS_VERSION='3.1';
+const VERSION='3.9',INSTRUCTIONS_VERSION='3.1';
 const STORAGE='entropy-quest-save-v1';
 const powers=[
  {id:'magnet',name:'ENERGY MAGNET',icon:'✦',color:'#fbd277',help:'Pulls nearby loose sparks and supply crystals toward you for 7 seconds.',lesson:'The magnet moves supplies; it does not create energy.'},
@@ -271,10 +272,10 @@ function choosePrologueHero(id){
 function selectCharacter(id){
  if(!characters[id])return;if(id===save.character){save.characterChosen=true;store();showMenu();return;}
  const campaigns=save.campaigns&&typeof save.campaigns==='object'?save.campaigns:{};
- const progress={};for(const key of ['unlocked','current','completed','xp','gear','runs','lensUnlocked','mountainStar'])if(save[key]!==undefined)progress[key]=JSON.parse(JSON.stringify(save[key]));
+const progress={};for(const key of ['unlocked','current','completed','xp','gear','runs','lensUnlocked','mountainStar','shiftLog'])if(save[key]!==undefined)progress[key]=JSON.parse(JSON.stringify(save[key]));
  campaigns[save.character||'flux']=progress;
  const next=campaigns[id]||freshSave();
- for(const key of ['unlocked','current','completed','xp','gear','runs','lensUnlocked','mountainStar'])save[key]=next[key]??(key==='mountainStar'?false:freshSave()[key]);
+ for(const key of ['unlocked','current','completed','xp','gear','runs','lensUnlocked','mountainStar','shiftLog'])save[key]=next[key]??(key==='mountainStar'?false:key==='shiftLog'?{}:freshSave()[key]);
  save.character=id;save.characterChosen=true;save.campaigns=campaigns;level=save.current;equipped=Math.min(save.gear,availablePowerIndex());powerTime=0;powerCooldown=0;stage={};player={};activeRun=false;dialogue=null;clearControls();store();showMenu();
 }
 function characterDialogue(lines){return lines.map(([speaker,text,scene])=>{
@@ -761,7 +762,135 @@ function stepPlayer(){
 function stepProjectiles(){const alive=[];for(const p of projectiles){p.x+=p.vx;p.y+=p.vy;p.life--;if(p.kind==='wedge')p.vy+=.24;let hit=receiverHit(p);if(!hit){for(const e of enemies){if(Math.hypot(p.x-e.x,p.y-e.y)<25){e.stun=p.kind==='ice'?270:160;refund(p);burst(e.x,e.y,'#9fe7e1',9);hit=true;toast('DRONE STUNNED! Run past while it is asleep.');break;}}}if(!hit&&p.kind==='wedge'&&p.y>=floorAt(p.x)){if(level===4&&Math.abs(p.x-stage.boulder)<75){stage.anchored=true;milestone('WEDGE SET · Rest, recover, then keep pushing.');}else toast('Aim the curved line at the rock’s bottom, then THROW.');hit=true;}if(!hit&&(p.life<=0||p.x<0||p.x>960||p.y<30||p.y>580)){refund(p);hit=true;}if(!hit)alive.push(p);}projectiles=alive;}
 function stepEnemies(){for(const e of enemies){e.y=floorAt(e.x)-(level===3?90:28);if(e.stun>0){e.stun--;continue;}if(level===4){e.warning=(ticks+(e.min===645?0:90))%180<(save.character==='professor'?30:save.character==='student'?65:50);const sweep=(ticks+(e.min===645?0:90))%180;if(sweep>=(save.character==='professor'?30:save.character==='student'?65:50)&&sweep<110)e.x+=e.dir*1.8*character().speed;}else e.x+=e.dir*(level===6?1.5:1.1)*character().speed;if(e.x>e.max||e.x<e.min)e.dir*=-1;if(Math.abs(player.x-e.x)<29&&Math.abs(player.y-18-e.y)<29)hitPlayer('Drone bumped you');}if(level===2||level===6&&!stage.boss){for(const x of (level===2?[350,705]:[510])){const active=ventActive(x);if(active&&Math.abs(player.x-x)<24&&player.y>floorAt(player.x)-95)hitPlayer('Hot vent');}}}
 function stepEffects(){for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.life--;}particles=particles.filter(p=>p.life>0);if(toastTimer>0&&--toastTimer===0)$('toast').classList.add('hidden');if(ticks%8===0)updateHUD();if(ticks%180===0)persistRun();}
-function stepGame(){ticks++;if(thermoFinale()){stepThermoFinale();stepEffects();return;}if(stage.labDemo){stepLabPreparation();stepEffects();return;}if(valeBattle()&&stage.boss.transition){stepValeTransition();stepEffects();return;}if(shotTimer>0)shotTimer--;if(powerTime>0)powerTime--;if(powerCooldown>0)powerCooldown--;if(controls.fire)shoot();stepPlayer();if(screen!=='play')return;stepEnemies();stepProjectiles();stepReactions();stepVale();stepEffects();}
+function stepGame(){ticks++;if(stage.shift){stepWorldShift();stepEffects();return;}if(thermoFinale()){stepThermoFinale();stepEffects();return;}if(stage.labDemo){stepLabPreparation();stepEffects();return;}if(valeBattle()&&stage.boss.transition){stepValeTransition();stepEffects();return;}if(shotTimer>0)shotTimer--;if(powerTime>0)powerTime--;if(powerCooldown>0)powerCooldown--;if(controls.fire)shoot();stepPlayer();if(screen!=='play')return;if(maybeWorldShift()){stepEffects();return;}stepEnemies();stepProjectiles();stepReactions();stepVale();stepEffects();}
+
+// Three short, original instability pockets. State lives in the normal saved
+// stage, while the platforming body, health, supplies and timers remain frozen.
+const worldShifts={
+ 2:{kind:'flight',title:'PIP’S THERMAL FLIGHT',goal:'Tap A to lift. Coast through the glowing gaps.',lesson:'Our charged glider used stored energy: some became lift, some became waste heat. Energy changed form—it did not appear from nowhere.',intro:'The canyon is folding! Hold on to my charged glider. Tap A to lift; let go to coast. Follow the glowing gaps!',color:'#ffe49c'},
+ 3:{kind:'run',title:'COOLANT ESCAPE',goal:'← → choose a lane. A jumps the low barriers.',lesson:'We delivered coolant to the hot Engine outlet. Heat then flowed from hot to cooler coolant; the powered pump used work to move that coolant.',intro:'It’s shifting again! The pump has cleared a path. Deliver the coolant: switch lanes with ← →, or jump a LOW barrier with A.',color:'#9eeaf5'},
+ 5:{kind:'weave',title:'GREENHOUSE RIFT',goal:'Hold ← → to weave between the falling blocks.',lesson:'We carried the catalyst safely to the reactor. A catalyst lowers the activation barrier: it can speed a favorable reaction, but does not change its Gibbs energy or equilibrium.',intro:'Vale’s Engine is twisting the greenhouse! Carry this catalyst to the reactor. Hold ← → to dodge the falling blocks. The glowing exit is our way back.',color:'#adf2b4'}
+};
+function maybeWorldShift(){
+ if(!worldShifts[level]||stage.shift||stage.shiftDone||!stage.done||player.x<810||player.x>=866||save.completed.includes(level))return false;
+ beginWorldShift();return true;
+}
+function beginWorldShift(){
+ const c=worldShifts[level];if(!c||stage.shiftDone)return false;
+ clearControls();stage.shift={kind:c.kind,mode:'rupture',time:0,clock:0,x:480,y:270,vy:0,lane:1,jump:0,checkpoint:0,failures:0,energy:240,work:0,heat:0,rescued:false};
+ toast('PIP: '+c.intro);toastTimer=0;persistRun();updateHUD();return true;
+}
+function shiftInput(name,source='direct'){
+ const s=stage.shift;if(!s||screen!=='play')return;
+ if(s.mode==='returning')return;
+ if(name==='power'){finishWorldShift(true);return;}
+ if(s.mode==='rupture')return;
+ if(s.mode==='ready'||s.mode==='retry'){
+  if(['act','jump','fire'].includes(name)){s.mode='active';s.clock=0;clearControls();toast(worldShifts[level].goal);persistRun();updateHUD();}return;
+ }
+ if(s.mode!=='active')return;
+ if(s.kind==='flight'&&['jump','act'].includes(name)&&s.energy>=2){s.vy=-3.8;s.energy-=2;s.work++;s.heat++;beep(480,.045,'triangle',.025);}
+ if(s.kind==='run'){
+  if(name==='left')s.lane=Math.max(0,s.lane-1);
+  if(name==='right')s.lane=Math.min(2,s.lane+1);
+  if(name==='jump'&&s.jump===0)s.jump=48;
+ }
+ if(s.kind==='weave'&&['left','right'].includes(name)){inputHolds.set(source+':'+name,name);syncControls();}
+}
+function shiftRows(kind){
+ const rows=[];for(let i=0;i<8;i++)rows.push(kind==='run'?{at:180+i*110,lane:[1,0,2,1,2,0,1,2][i],low:i%3!==1}:{at:180+i*100,gap:[480,230,730,380,630,230,480,730][i]});return rows;
+}
+function retryWorldShift(){
+ const s=stage.shift;s.failures++;s.mode='retry';s.time=s.checkpoint;s.clock=0;s.y=270;s.vy=0;s.x=480;s.lane=1;s.jump=0;s.energy=240;s.work=0;s.heat=0;
+ clearControls();toast('PIP CAUGHT YOU! No hearts or supplies lost. X / A retries this section; Y asks Pip to carry you back.');toastTimer=0;persistRun();updateHUD();
+}
+function stepWorldShift(){
+ const s=stage.shift;if(!s)return;s.clock++;
+ if(s.mode==='rupture'){if(s.clock>=90){s.mode='ready';s.clock=0;clearControls();updateHUD();persistRun();}return;}
+ if(s.mode==='returning'){if(s.clock>=75)finishWorldShift(false);return;}
+ if(s.mode!=='active')return;
+ const pace=save.character==='student'?.8:save.character==='professor'?1.1:1;
+ s.time+=pace;s.jump=Math.max(0,s.jump-pace);
+ if(s.kind==='flight'){
+  s.vy=Math.min(4.2,s.vy+.14*pace);s.y+=s.vy*pace;
+  const gap=save.character==='student'?230:save.character==='professor'?170:200;
+  let hit=s.y<115||s.y>455;
+  for(let i=0;i<6;i++){const x=960+i*300-s.time*2.2,center=[270,220,300,240,310,250][i];if(Math.abs(x-220)<54&&Math.abs(s.y-center)>gap/2-28)hit=true;}
+  if(hit){retryWorldShift();return;}
+ }else if(s.kind==='run'){
+  s.x+=(270+s.lane*210-s.x)*.22;
+  for(const row of shiftRows('run'))if(Math.abs(s.time-row.at)<10&&s.lane===row.lane&&(!row.low||s.jump<12)){retryWorldShift();return;}
+ }else{
+  s.x=Math.max(145,Math.min(815,s.x+((controls.right?1:0)-(controls.left?1:0))*5.5*pace));
+  const width=save.character==='student'?245:save.character==='professor'?175:210;
+  for(const row of shiftRows('weave'))if(Math.abs(s.time-row.at)<10&&Math.abs(s.x-row.gap)>width/2-16){retryWorldShift();return;}
+ }
+ // Safe local sections: advance a checkpoint only when clear of an obstacle.
+ if(s.time>=360&&s.checkpoint<360&&s.time<370)s.checkpoint=360;
+ if(s.time>=720&&s.checkpoint<720&&s.time<730)s.checkpoint=720;
+ if(s.time>=1080){s.time=1080;s.mode='returning';s.clock=0;clearControls();toast('PIP: The route is stable—back to our world!');persistRun();updateHUD();return;}
+}
+function finishWorldShift(rescued=false){
+ const s=stage.shift,c=worldShifts[level];if(!s||!c)return;
+ stage.shiftResult={kind:s.kind,rescued,work:s.work,heat:s.heat,failures:s.failures};save.shiftLog=save.shiftLog&&typeof save.shiftLog==='object'?save.shiftLog:{};save.shiftLog[level]={...stage.shiftResult};stage.shiftDone=true;stage.shift=null;
+ clearControls();player.vy=0;player.x=810;player.y=floorAt(810);player.onGround=true;player.invincible=180;checkpoint=810;stage.checkpoint=810;
+ persistRun();updateHUD();say([['PIP',(rescued?'I carried us out. Your repairs and supplies are safe. ':'WE’RE BACK! You navigated the shift. ')+c.lesson],['PIP','The world is stable again. Your original objective is complete—head to the glowing exit!']]);
+}
+function drawWorldShift(){
+ const s=stage.shift,c=worldShifts[level];drawSky();drawRect(0,465,960,75,'#12263a');
+ const t=s.time;ctx.save();ctx.strokeStyle=c.color;ctx.lineWidth=3;
+ if(s.mode==='rupture'){
+  drawTinyFlux(480,430,levels[level].suit,2);drawPip(420,335,1.5);
+  if(!ambientReduced)for(let n=0;n<3;n++){ctx.globalAlpha=.6;ctx.beginPath();ctx.arc(480,300,40+(s.clock*3+n*75)%300,0,Math.PI*2);ctx.stroke();}
+  ctx.globalAlpha=1;drawText('THE WORLD IS SHIFTING!',480,195,26,c.color);drawText('Pip is opening a safe route…',480,230,16,'#edf5ed');ctx.restore();return;
+ }
+ if(s.kind==='flight'){
+  const gap=save.character==='student'?230:save.character==='professor'?170:200;
+  for(let i=0;i<6;i++){const x=960+i*300-t*2.2,center=[270,220,300,240,310,250][i];if(x<-70||x>1010)continue;
+   drawRect(x-30,100,60,center-gap/2-100,'#3d5268');drawRect(x-30,center+gap/2,60,465-center-gap/2,'#3d5268');
+   drawRect(x-35,center-gap/2-5,70,5,c.color);drawRect(x-35,center+gap/2,70,5,c.color);drawText('PASS HERE →',x,center,12,c.color);
+  }
+  ctx.save();ctx.globalAlpha=.4;ctx.beginPath();ctx.moveTo(210,s.y-20);ctx.lineTo(190,s.y+32);ctx.moveTo(230,s.y-20);ctx.lineTo(250,s.y+32);ctx.stroke();ctx.restore();
+  drawTinyFlux(220,s.y+30,levels[level].suit,1.1);drawRect(190,s.y+32,65,5,'#adf2e4');drawPip(220,s.y-40,1.5);
+  if(s.vy<0&&!ambientReduced){drawRect(195,s.y+50,7,10+s.work%8,'#ffd27a');drawRect(240,s.y+50,7,12,'#ffad76');}
+  drawText('BATTERY → MOTION + WASTE HEAT',480,80,16,c.color);
+  drawText('Energy units: stored '+s.energy+' · motion '+s.work+' · heat '+s.heat,480,105,13,'#edf5ed');
+ }else if(s.kind==='run'){
+  ctx.fillStyle='#203c50';ctx.beginPath();ctx.moveTo(390,140);ctx.lineTo(570,140);ctx.lineTo(890,490);ctx.lineTo(70,490);ctx.closePath();ctx.fill();
+  for(const side of [-1,1]){ctx.beginPath();ctx.moveTo(480+side*30,140);ctx.lineTo(480+side*105,490);ctx.stroke();}
+  for(let n=0;n<12;n++){const depth=((t*2+n*65)%720)/720;drawRect(480-80-depth*320,140+depth*350,160+depth*640,3,'#79b3bf55');}
+  drawText('DELIVER COOLANT TO THE HOT OUTLET ↑',480,80,16,c.color);
+  drawRect(437,119,86,34,'#f1b07d');drawText('HOT OUTLET',480,142,10,'#16354b');
+  for(const row of shiftRows('run')){const d=(t-row.at+150)/150;if(d<0||d>1.15)continue;const x=480+(row.lane-1)*(40+d*170),y=145+d*270,w=22+d*58;
+   drawRect(x-w/2,y-(row.low?18:50)*d,w,(row.low?20:55)*d+5,row.low?'#ddbc7c':'#ab7599');drawText(row.low?'LOW · JUMP':'BLOCK · DODGE',x,y-14-d*55,11,'#ffe49c');}
+  const lift=Math.sin(s.jump/48*Math.PI)*85;drawShiftBackHero(s.x,445-lift);drawPip(s.x-55,360-lift);
+ }else{
+  drawRect(110,120,740,355,'#183b40');for(let n=0;n<9;n++)drawRect(120+n*90,120,2,350,'#73a99133');
+  drawText('CARRY THE CATALYST TO THE REACTOR ↑',480,80,16,c.color);drawRect(430,120,100,35,c.color);drawText('REACTOR',480,143,12,'#183b40');
+  const width=save.character==='student'?245:save.character==='professor'?175:210;
+  for(const row of shiftRows('weave')){const y=420+(t-row.at)*2.2;if(y<125||y>485)continue;
+   drawRect(110,y-15,row.gap-width/2-110,30,'#986e92');drawRect(row.gap+width/2,y-15,850-row.gap-width/2,30,'#986e92');drawRect(row.gap-width/2,y-18,width,3,c.color);drawText('GAP',row.gap,y-28,13,c.color);}
+  drawTinyFlux(s.x,450,levels[level].suit,1.4);drawRect(s.x-8,385,16,20,'#b5f0aa');drawText('CAT',s.x,397,8,'#153c34');drawPip(s.x-48,401);
+ }
+ drawRect(230,496,500,8,'#36516a');drawRect(230,496,500*Math.min(1,t/1080),8,c.color);drawText('SAFE ROUTE '+Math.floor(t/1080*100)+'%',480,527,13,c.color);
+ if(s.mode==='ready'||s.mode==='retry'){
+  drawRect(170,170,620,135,'#10263bee');ctx.strokeRect(170,170,620,135);
+  drawText(s.mode==='retry'?'PIP CAUGHT YOU · LOCAL RETRY':c.title,480,202,23,c.color);drawText(c.goal,480,236,16,'#edf5ed');drawText('TAP HERE / X / A TO '+(s.mode==='retry'?'RETRY':'START'),480,276,19,c.color);
+ }
+ if(s.mode==='returning'){
+  if(!ambientReduced)for(let n=0;n<3;n++){ctx.save();ctx.globalAlpha=.35;ctx.beginPath();ctx.arc(480,300,60+(s.clock*4+n*90)%350,0,Math.PI*2);ctx.stroke();ctx.restore();}
+  drawRect(170,180,620,95,'#10263bee');drawText('RIFT CLOSING · ROUTE RESTORED',480,214,23,c.color);
+  drawText(s.kind==='flight'?'Stored energy became motion + heat':s.kind==='run'?'Heat: HOT OUTLET → COOLER COOLANT':'Catalyst delivered · faster, not more favorable',480,248,16,'#edf5ed');
+ }
+ ctx.restore();
+}
+function drawShiftBackHero(x,y){
+ const look=characterLooks[save.character],coat=save.character==='student'?'#7acbee':'#eaf1e8';ctx.save();ctx.translate(x,y);const sway=ambientReduced?0:Math.sin(stage.shift.time*.25)*5;
+ drawRect(-15,-38,30,33,coat);drawRect(-17+sway,-8,13,10,'#24354d');drawRect(5-sway,-8,13,10,'#24354d');
+ if(save.character!=='student'){drawRect(-18+sway*.7,-14,12,12,coat);drawRect(6-sway*.7,-14,12,12,coat);}
+ drawRect(-12,-59,24,22,look.skin);drawRect(-14,-60,28,14,look.hair);if(save.character==='professor')drawRect(-12,-64,24,8,look.highlight);drawRect(-22,-35+sway,7,23,coat);drawRect(15,-35-sway,7,23,coat);drawRect(-23,-13+sway,8,7,look.skin);drawRect(15,-13-sway,8,7,look.skin);
+ drawRect(-10,-28,20,14,'#8beee4');drawText('COOL',0,-17,8,'#153c34');ctx.restore();
+}
 function drawGround(){const l=worldPalette();for(let x=0;x<960;x+=8){const y=floorAt(x);if(!isGap(x)){drawRect(x,y,8,540-y,'#1b2b3f');drawRect(x,y,8,7,l.accent);}}for(let i=0;i<35;i++){const x=(i*83+3)%960;if(!isGap(x))drawRect(x,floorAt(x)+24+(i*31)%55,23,4,l.hill);}for(const p of platforms()){drawRect(p.x,p.y,p.w,13,l.hill);drawRect(p.x,p.y,p.w,5,l.accent);for(let z=p.x+7;z<p.x+p.w;z+=19)drawRect(z,p.y+10,11,4,'#1f3041');}if(level===3)for(const x of [432,695]){drawText(powerTime>0&&equipped===3?'ICE BRIDGE':'GAP',x+34,488,10,'#cbefff');}drawRect(92,floorAt(120)-7,57,7,'#83f0c5');drawText('START',120,floorAt(120)-55,10,'#a9f6d8');drawText('GO RIGHT →',120,floorAt(120)-41,9,'#f5ebc9');if(level===4&&checkpoint>=590){drawRect(590,floorAt(590)-64,4,64,'#f3dba1');drawRect(594,floorAt(590)-64,24,16,'#83f0c5');}}
 function drawPortal(){const x=894,y=floorAt(x)-77,col=stage.done?'#a6ffd3':'#8b9aaf';drawRect(x-28,y,59,78,'#1a2b43');drawRect(x-23,y-6,50,70,col);drawRect(x-18,y,40,64,stage.done?'#367e8c':'#26344d');if(stage.done){ctx.strokeStyle='#b3f7d2';ctx.lineWidth=3;ctx.strokeRect(x-10,y+12,20,40+Math.sin(ticks*.1)*5);}drawText(stage.done?'OPEN':'LOCKED',x,y-16,11,stage.done?'#b0ffd0':'#d1b4af');}
 function target(x,y,label,color,filled=false){ctx.save();ctx.shadowColor=filled?'#63caa4':color;ctx.shadowBlur=filled?0:15;drawRect(x-40,y-40,80,80,'#182d45');drawRect(x-36,y-36,72,72,filled?'#63caa4':color);ctx.shadowBlur=0;drawRect(x-29,y-29,58,58,'#223a53');ctx.strokeStyle=filled?'#bafbd8':color;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,22,0,Math.PI*2);ctx.stroke();drawText(filled?'✓':'◎',x,y+9,29,filled?'#bafbd8':color);drawText(label,x,y-47,12,'#fff0d0');ctx.restore();}
@@ -816,6 +945,7 @@ function drawStoryScene(scene){
  if(scene==='rupture'){for(let n=0;n<3;n++){const radius=(cinematicTime*2+n*65)%240;ctx.save();ctx.globalAlpha=1-radius/240;ctx.strokeStyle='#b7f4e9';ctx.lineWidth=6;ctx.beginPath();ctx.arc(786,300,radius,0,Math.PI*2);ctx.stroke();ctx.restore();}drawText('ENERGY ROUTES UNSTABLE',480,50,20,'#ffd786');}
 }
 function drawGame(){
+ if(stage.shift){drawWorldShift();return;}
  if(thermoFinale()){drawThermoFinale();drawFX();return;}
  const scene=dialogue?.lines[dialogue.index][2];
  if(scene==='classroom'||scene==='rupture'){drawStoryScene(scene);return;}
@@ -985,6 +1115,7 @@ function clearControls(){
 }
 function pressControl(name,source='direct'){
  unlockAudio();
+ if(stage.shift&&screen==='play'){shiftInput(name,source);return;}
  if(thermoFinale()){if(['act','fire','jump'].includes(name))finaleTap();return;}
  if(stage.labDemo){if(name==='act'){stage.labDemo=null;clearControls();persistRun();updateHUD();}return;}
  if(valeBattle()&&stage.boss.transition)return;
@@ -1146,6 +1277,8 @@ function powerStatus(){
 }
 function updateHUD(){
  if(screen!=='play')return;
+ if(stage.shift){updateShiftHUD();return;}
+ document.querySelectorAll('[data-control]').forEach(b=>b.disabled=false);$('gearBtn').disabled=false;$('jumpLabel').textContent='JUMP';document.querySelector('[data-control="jump"]')?.setAttribute('aria-label','Jump');
  $('hudTitle').textContent=level===0&&!stage.glassesOn?'PROLOGUE · THE LOST GOGGLES':`WORLD ${level+1} · ${levels[level].title}${level===0?' · TUTORIAL':''}`;
  $('hudQuest').textContent=nextTask();
  $('hudXP').textContent='♥'.repeat(player.hp)+'♡'.repeat(Math.max(0,character().hearts-player.hp));
@@ -1163,7 +1296,22 @@ function updateHUD(){
  updateTutorial();
  positionGuidance();
 }
+function updateShiftHUD(){
+ const s=stage.shift,c=worldShifts[level],ready=s.mode==='ready'||s.mode==='retry';
+ $('hudTitle').textContent='WORLD SHIFT · '+c.title;
+ $('hudQuest').textContent=s.mode==='rupture'?'RIFT WARNING · Pip is opening a route':s.mode==='returning'?'ROUTE RESTORED · Returning to the original world':s.mode==='retry'?'No hearts lost · X / A retries from your local checkpoint':ready?'X / A START · '+c.goal:c.goal+' · '+Math.floor(s.time/1080*100)+'%';
+ $('hudXP').textContent='♥'.repeat(player.hp);$('hudPower').textContent='PIP GUIDE · '+(s.kind==='flight'?'Charged glider: stored energy → motion + heat':s.kind==='run'?'Deliver coolant · heat flows HOT → COOL':'Carry a catalyst · faster does not mean more favorable')+' · Y / F: Pip rescue (skip this pocket)';
+ $('toolBtn').textContent='SHORT WORLD SHIFT';$('toolBtn').disabled=true;$('gearBtn').disabled=true;
+ $('actLabel').textContent=ready?'START':s.kind==='flight'?'FLAP':'—';$('jumpLabel').textContent=ready?'START':s.kind==='flight'?'FLAP':s.kind==='weave'?'—':'JUMP';$('fireLabel').textContent='—';$('powerLabel').textContent='RESCUE';$('powerControl').setAttribute('aria-label','Ask Pip to rescue you and skip this challenge');
+ document.querySelector('[data-control="jump"]')?.setAttribute('aria-label',ready?'Start or retry world shift':s.kind==='flight'?'Flap charged glider':'Jump low barrier');
+ document.querySelectorAll('[data-control]').forEach(b=>{b.disabled=b.dataset.control==='fire'||['up','down'].includes(b.dataset.control)||s.kind==='flight'&&['left','right'].includes(b.dataset.control)||s.kind==='weave'&&b.dataset.control==='jump'&&!ready;});
+ const a=document.querySelector('[data-control="act"]');if(a){a.disabled=!ready&&s.kind!=='flight';a.setAttribute('aria-label',ready?'Start or retry world shift':'Flap charged glider');}
+ $('powerControl').classList.remove('running');$('powerControl').classList.add('ready');$('contextHint').textContent=c.goal;
+ $('aimReadout').textContent=s.kind==='run'?'LANE':s.kind==='weave'?'WEAVE':'FLAP';$('aimHint').textContent=s.kind==='flight'?'A / SPACE / TAP WORLD · FLAP':s.kind==='run'?'← → SWITCH LANES · A / SPACE JUMP':'HOLD ← → · WEAVE THROUGH GAPS';
+ $('tutorialTip').classList.add('hidden');updateSoundLabel();positionGuidance();
+}
 function activatePower(){
+ if(stage.shift){shiftInput('power');return;}
  if(thermoFinale()||stage.labDemo)return;
  if(valeBattle()&&stage.boss.transition)return;
  if(screen==='circuit'){if(equipped!==1||powerCooldown>0){$('circuitHint').textContent=equipped!==1?'Equip BURST to get pipe help, or turn pipes yourself.':'BURST is recharging. Keep turning pipes.';return;}let helped=0;for(let i=0;i<9&&helped<2;i++)if(stage.circuit[i]!==solvedCircuit[i]){stage.circuit[i]=solvedCircuit[i];helped++;}powerCooldown=240;persistRun();if(circuitConnected())testCircuit();else{showCircuit();$('circuitHint').textContent='BURST turned '+helped+' pipes for you. Follow the green connection!';}return;}
@@ -1204,6 +1352,7 @@ function chooseTemperature(t){
  if(!stage.labPrepared){stage.labPrepared=true;beginLabPreparation();}
 }
 function action(){
+ if(stage.shift){shiftInput('act');return;}
  if(thermoFinale()){finaleTap();return;}
  if(stage.labDemo){stage.labDemo=null;clearControls();persistRun();updateHUD();return;}
  if(screen!=='play')return;if(dialogue){advanceSpeech();return;}if(stage.done){toast('Door open! Walk right →');return;}
@@ -1217,6 +1366,7 @@ function action(){
  if(level===6)showTemperature(2);
 }
 function shoot(){
+ if(stage.shift)return;
  if(thermoFinale()||stage.labDemo)return;
  if(screen!=='play'||dialogue||shotTimer>0)return;
  if(valeBattle()&&stage.boss.transition)return;
@@ -1259,6 +1409,7 @@ function drawObjectiveGuide(){
  ctx.restore();
 }
 function onWorldTap(e){
+ if(stage.shift&&screen==='play'){e.preventDefault();unlockAudio();shiftInput(stage.shift.mode==='active'?'jump':'act');return;}
  if(thermoFinale()&&screen==='play'){const box=canvas.getBoundingClientRect(),x=(e.clientX-box.left)*960/box.width,y=(e.clientY-box.top)*540/box.height;if(Math.hypot(x-650,y-350)<90){e.preventDefault();unlockAudio();finaleTap();}return;}
  if(screen==='prologue'&&classroomPage>=classroomIntro.length){const box=canvas.getBoundingClientRect(),x=(e.clientX-box.left)*960/box.width,y=(e.clientY-box.top)*540/box.height;const c=classroomCast.find(c=>Math.abs(x-c.x)<65&&y>c.y-115&&y<c.y+25);if(c){e.preventDefault();unlockAudio();choosePrologueHero(c.id);}return;}
  if(screen!=='play'||dialogue)return;const goal=objectiveCue();if(goal.kind!=='use')return;
@@ -1365,7 +1516,7 @@ const levelRecaps=[
  {did:'Prepared fictional reagent capsules, warmed A, cooled B, and manually aimed the capsules into both reactors.',learned:'At constant temperature and pressure, ΔG = ΔH − TΔS predicts direction. ΔH is the enthalpy change (the heat bill under constant-pressure, pressure-volume-work conditions); ΔS is the change in microscopic arrangements; T is kelvin temperature; ΔG is the Gibbs energy change. A at 400 K has −18 kJ and B at 200 K has −4 kJ: both favor the forward reaction. Positive ΔG opposes that direction under those conditions. Spontaneous does not mean fast; HURRY changes rate, not ΔG.'},
  {did:'Restored the Heart, aimed through Vale’s three defenses, and applied four recalled ideas in the timed emergency shutdown.',learned:'Stored energy supplied work and heat; heat needed a cooler outlet; powered cooling stayed above 0 K; favorable reaction conditions enabled the release. The final discharge transformed stored energy into light, heat and work—it did not create energy or reverse the universe’s entropy. Timing operated the equipment; it did not change the laws. Pip stayed your guide, and Vale lost control of the Engine.'}
 ];
-function levelRecap(i){const r=levelRecaps[i];return `<div class="info"><p><strong>✦ What you did</strong><br>${r.did}</p><p><strong>💡 What that taught you</strong><br>${r.learned}</p></div>`;}
+function levelRecap(i){const r=levelRecaps[i],shift=save.shiftLog?.[i],c=worldShifts[i];return `<div class="info"><p><strong>✦ What you did</strong><br>${r.did}</p><p><strong>💡 What that taught you</strong><br>${r.learned}</p>${shift&&c?`<p><strong>⚡ ${c.title} · ${shift.rescued?'Pip rescue':'Route navigated'}</strong><br>${c.lesson}</p>`:''}</div>`;}
 function finishLevel(){
  if(screen!=='play'||dialogue||!stage.done)return;const was=save.completed.includes(level);
  if(!was){save.completed.push(level);save.xp+=100;save.unlocked=Math.max(save.unlocked,Math.min(6,level+1));}
