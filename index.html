@@ -183,7 +183,7 @@
 <div id="controllerDock">
 <div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small>JUMP</small></button></div></div>
 <div id="aimHint" class="hidden">↑ ↓ AIM · SPACE JUMP · J FIRE · E ACT · F POWER</div>
-</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.7</span>
+</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v3.8</span>
 </div></div>
 <script>
 
@@ -200,7 +200,7 @@ const levels=[
 {title:'THE HEART OF THE UNIVERSE',world:'The Final Core',badge:'🌌',suit:'#ead8ff',sky:'#30224f',hill:'#634f8d',accent:'#dcc0ff',topic:'All Laws · State Functions · Spontaneity',task:'Restore the three core modules in order, then reach the portal.',intro:[['PIP','We made it, Flux! The heart of the universe is right here.'],['FLUX','Three broken modules. One final chance.'],['PIP','Energy, entropy, and free energy... everything we learned will help us fix this!']],end:'You restored the Core by conserving energy, respecting the natural direction of heat flow, and finding favorable conditions for a reaction. Thermodynamics helps predict which changes are possible and which direction is favored—not necessarily how fast they occur.',upgrade:'Master of thermodynamics',science:'Final synthesis: First, Second, and Third Laws; q and w; state functions; spontaneity and ΔG = ΔH − TΔS.'}
 ];
 
-const VERSION='3.7',INSTRUCTIONS_VERSION='3.1';
+const VERSION='3.8',INSTRUCTIONS_VERSION='3.1';
 const STORAGE='entropy-quest-save-v1';
 const powers=[
  {id:'magnet',name:'ENERGY MAGNET',icon:'✦',color:'#fbd277',help:'Pulls nearby loose sparks and supply crystals toward you for 7 seconds.',lesson:'The magnet moves supplies; it does not create energy.'},
@@ -295,11 +295,11 @@ function positionGuidance(){
 }
 function readSave(){try{const j=JSON.parse(localStorage.getItem(STORAGE));if(!j||typeof j!=='object')return freshSave();const s={...freshSave(),...j};s.unlocked=Math.max(0,Math.min(6,Number(j.unlocked)||0));s.current=Math.max(0,Math.min(s.unlocked,Number(j.current)||0));s.completed=Array.isArray(j.completed)?[...new Set(j.completed.filter(x=>Number.isInteger(x)&&x>=0&&x<7))]:[];s.gear=Math.max(0,Math.min(5,Number(j.gear)||0));s.runs=j.version===2&&j.runs&&typeof j.runs==='object'?j.runs:{};s.character=characters[j.character]?j.character:'flux';s.campaigns=j.campaigns&&typeof j.campaigns==='object'&&!Array.isArray(j.campaigns)?j.campaigns:{};s.version=2;return s;}catch{return freshSave();}}
 let save=readSave(),screen='menu',level=0,player={},last=0,ticks=0,accumulator=0,particles=[],pickups=[],projectiles=[],enemies=[],dialogue=null,dialogueTimer=0,toastTimer=0,controls={},stage={},portalHint=false,aim=0,shotTimer=0,noticeTimer=0,powerCooldown=0,powerTime=0,equipped=0,jumpQueued=false,checkpoint=90,activeRun=false;
-let audioCtx,audioMaster,musicTimer,musicBeat=0,musicWorld=-1,musicNext=0;
+let audioCtx,audioMaster,musicTimer,musicBeat=0,musicWorld=-1,musicNext=0,musicScore=null;
 const audioNotes=new Set();
 function store(){try{localStorage.setItem(STORAGE,JSON.stringify(save));$('saveNotice').classList.add('hidden');}catch{$('saveNotice').textContent='Saving unavailable in this browser. Keep this tab open to retain this run.';$('saveNotice').classList.remove('hidden');}}
 function persistRun(){if(!stage.initialized||!activeRun)return;const snapshot=JSON.parse(JSON.stringify(stage));for(const p of projectiles)if(p.resource&&!p.settled&&!p.refunded)snapshot[p.resource]++;save.runs[level]={stage:snapshot,pickups:JSON.parse(JSON.stringify(pickups)),x:isGap(player.x)?checkpoint:player.x,y:player.y,checkpoint,gear:equipped,instructions:INSTRUCTIONS_VERSION};store();}
-function stopAudioNotes(){for(const o of audioNotes)try{o.stop();}catch{}audioNotes.clear();musicWorld=-1;musicNext=0;}
+function stopAudioNotes(){for(const o of audioNotes)try{o.stop();}catch{}audioNotes.clear();musicWorld=-1;musicNext=0;musicScore=null;}
 function unlockAudio(fromGesture=true,rebuild=false){
  if(!save.sound||document.hidden){updateSoundLabel();return Promise.resolve(false);}
  try{
@@ -336,19 +336,29 @@ const musicThemes=[
 ];
 const prologueTheme={name:'Before the lenses',bpm:72,wave:'sine',notes:[220,0,0,261.63,0,246.94,0,0,196,0,220,0,0,246.94,0,0],bass:[110,98,130.81,123.47],drive:0};
 const valeTheme={name:'Vale’s last stand',bpm:180,wave:'square',notes:[164.81,0,246.94,329.63,196,0,293.66,392,164.81,246.94,329.63,493.88,392,293.66,246.94,0],bass:[82.41,98,73.42,123.47],drive:2};
-const finaleTheme={...valeTheme,name:'The thermodynamics crescendo',bpm:204,notes:[329.63,493.88,659.25,783.99,659.25,493.88,392,587.33,440,659.25,880,783.99,659.25,587.33,493.88,392]};
-const finaleThemes=[180,192,204,216].map(bpm=>({...finaleTheme,bpm}));
+// Keep Vale's melody, harmony and pulse through the entire fight. The finale
+// develops it with an octave layer rather than replacing it with another song.
+const finaleTheme={...valeTheme,name:'The thermodynamics crescendo',bpm:204};
+const finaleThemes=[180,192,204,216].map((bpm,i)=>({...finaleTheme,bpm,lift:.3+i*.2}));
 function currentMusicTheme(){return thermoFinale()?finaleThemes[stage.boss.finale.beat]:valeBattle()?valeTheme:screen==='prologue'||level===0&&!stage.glassesOn?prologueTheme:musicThemes[level];}
 function playMusicNote(){
- if(!save.music||!save.sound||document.hidden||(screen!=='play'&&screen!=='prologue')||!audioCtx||audioCtx.state!=='running'){musicWorld=-1;musicNext=0;return;}
-const theme=currentMusicTheme(),key=thermoFinale()?-4-stage.boss.finale.beat:theme===prologueTheme?-2:theme===valeTheme?-3:level,now=audioCtx.currentTime,step=30/theme.bpm;
- if(musicWorld!==key||musicNext<now-.25){musicWorld=key;musicBeat=0;musicNext=now+.01;}
+ if(!save.music||!save.sound||document.hidden||(screen!=='play'&&screen!=='prologue')||!audioCtx||audioCtx.state!=='running'){musicWorld=-1;musicNext=0;musicScore=null;return;}
+ const theme=currentMusicTheme(),key=thermoFinale()||valeBattle()?-3:theme===prologueTheme?-2:level,now=audioCtx.currentTime;
+ if(!musicScore||musicWorld===-1||musicNext<now-.25){musicWorld=key;musicBeat=0;musicNext=now+.01;musicScore={theme,previous:null,fade:1,bpm:theme.bpm,quiet:dialogue?.72:1,lift:0};}
  for(let count=0;count<2&&musicNext<=now+.08;count++){
-  const beat=musicBeat++,delay=Math.max(0,musicNext-now),n=theme.notes[beat%theme.notes.length];
-  const quiet=stage.boss?.finale?.mode==='memory'?.35:dialogue?.72:1;
-  if(n)tone(n,step*.78,theme.wave,(theme.wave==='square'?.035:.065)*quiet,delay);
-  if(beat%4===0)tone(theme.bass[Math.floor(beat/16)%4],step*1.7,'sine',.045*quiet,delay);
-  if(theme.drive&&beat%2===0)tone(beat%4===0?65:90,.065,'triangle',(.016+theme.drive*.004)*quiet,delay);
+  const beat=musicBeat++,delay=Math.max(0,musicNext-now),s=musicScore;
+  // New worlds enter on a phrase boundary; no beat resets mid-fight.
+  if(musicWorld!==key&&beat%16===0){s.previous=s.theme;s.theme=theme;s.fade=0;musicWorld=key;}
+  if(musicWorld===key){s.bpm+=Math.max(-1.5,Math.min(1.5,theme.bpm-s.bpm));s.lift+=((theme.lift||0)-s.lift)*.12;}
+  const step=30/s.bpm,targetQuiet=stage.boss?.finale?.mode==='memory'?.35:dialogue?.72:1;
+  s.quiet+=(targetQuiet-s.quiet)*.14;s.fade=Math.min(1,s.fade+1/16);
+  const voice=(score,mix)=>{if(!score||mix<=0)return;const n=score.notes[beat%score.notes.length],v=mix*s.quiet;
+   if(n)tone(n,step*.78,score.wave,(score.wave==='square'?.035:.065)*v,delay);
+   if(beat%4===0)tone(score.bass[Math.floor(beat/16)%4],step*1.7,'sine',.045*v,delay);
+   if(score.drive&&beat%2===0)tone(beat%4===0?65:90,.065,'triangle',(.016+score.drive*.004)*v,delay);
+   if(n&&s.lift>.01&&musicWorld===-3)tone(n*2,step*.9,'triangle',.018*s.lift*v,delay);
+  };
+  voice(s.previous,1-s.fade);voice(s.theme,s.fade);if(s.fade===1)s.previous=null;
   musicNext+=step;
  }
 }
@@ -630,9 +640,9 @@ function drawMenuBackdrop(){if(screen==='prologue'){drawStoryScene('classroom');
 function drawTinyFlux(x,y,color,scale=1,dir=1,heroId=save.character,showLenses=save.lensUnlocked||stage.glassesOn||level>0,seated=false){
  ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(dir*scale,scale);
  const r=(a,b,w,h,c)=>drawRect(a,b,w,h,c);
- const walking=screen==='play'&&!dialogue&&!thermoFinale()&&scale===1&&Math.abs(player.vx)>.15,time=ambientReduced?0:cinematicTime,swing=walking?Math.sin(time*.3)*5:0;
+ const walking=screen==='play'&&!dialogue&&!thermoFinale()&&scale===1&&Math.abs(player.vx)>.15,time=ambientReduced?0:cinematicTime,swing=walking&&!ambientReduced?Math.sin(time*.3)*9:0;
  const speaker=dialogue?.lines[dialogue.index][0]||(screen==='prologue'?classroomIntro[classroomPage]?.[0]:'')||'',talking=thermoFinale()?.mode==='memory'&&heroId===save.character||speaker.includes(heroId==='professor'?'AARONS':heroId==='student'?'JOHN':'FLUX');
- const gesture=talking?Math.sin(time*.12)*3:0,trail=walking?Math.min(5,Math.abs(player.vx))*-1:Math.sin(time*.045)*.6;
+ const gesture=talking&&!ambientReduced?Math.sin(time*.12)*7:0,trail=ambientReduced?0:walking?-9-Math.sin(time*.3)*4:Math.sin(time*.08)*2;
  if(walking)ctx.translate(0,-Math.abs(swing)*.25);
  const student=heroId==='student',professor=heroId==='professor',coat=student?'#7acbee':professor?'#eee5fa':'#eaf1e8';
  const look=characterLooks[heroId]||characterLooks.flux;
@@ -644,7 +654,11 @@ function drawTinyFlux(x,y,color,scale=1,dir=1,heroId=save.character,showLenses=s
  if(professor){r(-1,-22,2,2,'#ffd76a');r(-1,-17,2,2,'#ffd76a');r(14,-10,8,11,'#b791cc');r(16,-9,4,8,'#f3dfb8');}
  r(-12,-27,4,20,student?'#559ec6':'#ffffff');r(8,-27,4,20,student?'#559ec6':'#ffffff');r(-13,-8,26,3,color);
  if(seated){r(-9,-5,20,6,'#25354d');r(5,0,6,14,'#25354d');r(5,12,10,4,'#101d30');}else{r(-9+swing*.6,-5,7,7,'#25354d');r(3-swing*.6,-5,7,7,'#25354d');r(-10+swing,0,8,3,'#101d30');r(3-swing,0,8,3,'#101d30');}
- r(-17,-25-swing*.5,5,17,coat);r(12,-25+swing*.5-gesture,5,17,coat);r(-17,-10-swing*.5,5,5,look.skin);r(12,-10+swing*.5-gesture,5,5,look.skin);
+ // Shoulder joints make hands sweep out visibly instead of merely sliding.
+ const arm=(side,angle)=>{ctx.save();ctx.translate(side*13,-25);ctx.rotate(angle);r(side<0?-5:0,0,5,13,coat);ctx.translate(0,11);ctx.rotate(talking&&!ambientReduced?side*.3:0);r(side<0?-5:0,0,5,6,coat);r(side<0?-5:0,5,5,5,look.skin);ctx.restore();};
+ arm(-1,walking?swing*.065:talking?-.35-gesture*.045:0);
+ arm(1,walking?-swing*.065:talking?.65+gesture*.06:0);
+ ctx.save();if(!ambientReduced)ctx.translate(talking?Math.sin(time*.12)*1.2:0,talking?Math.sin(time*.24)*1.4:0);
  r(-10,-43,20,17,look.skin);
  if(professor){
   // Short close sides and a textured, swept-up highlighted top, inspired
@@ -661,7 +675,7 @@ function drawTinyFlux(x,y,color,scale=1,dir=1,heroId=save.character,showLenses=s
  r(-6,-34,3,3,'#172c40');r(4,-34,3,3,'#172c40');r(1,-29,5,talking&&Math.sin(time*.5)>0?4:2,talking?'#744d47':'#efd3b2');
  if(!ambientReduced){r(-7+trail*.35,-47,4,3,look.hair);r(2+trail*.35,-48,5,3,look.hair);}
  if(professor)drawProfessorGlasses();
- if(showLenses)drawThermoGlasses(0,-33,1);
+ if(showLenses)drawThermoGlasses(0,-33,1);ctx.restore();
  r(9,-22,3,6,color);r(10,-23,2,2,'#ffdc82');ctx.restore();
 }
 function drawProfessorGlasses(){
@@ -766,9 +780,9 @@ function drawFX(){for(const p of particles)drawRect(p.x,p.y,4,4,p.color);}
 let cinematicTime=0;
 function worldPalette(){return level===0&&!stage.glassesOn?{...levels[level],sky:'#25313b',hill:'#46545a',accent:'#87938d'}:levels[level];}
 function drawVale(x,y,scale=1,mood='calm',reaction=0){
- const talking=dialogue?.lines[dialogue.index][0]==='DR. VALE'||screen==='prologue'&&classroomIntro[classroomPage]?.[0]==='DR. VALE',motion=ambientReduced?0:Math.sin(cinematicTime*.15)*2;
+ const talking=dialogue?.lines[dialogue.index][0]==='DR. VALE'||screen==='prologue'&&classroomIntro[classroomPage]?.[0]==='DR. VALE',motion=ambientReduced?0:Math.sin(cinematicTime*.15)*6;
  ctx.save();ctx.translate(x,y+(talking?motion*.3:0));if(mood==='panic'&&!ambientReduced)ctx.rotate(Math.sin(cinematicTime*.2)*.06);ctx.scale(scale,scale);drawRect(-13,-28,26,25,'#d9d8e8');drawRect(-6,-26,12,20,'#755b9c');drawRect(-10,-43,20,16,mood==='panic'?'#e7b18c':'#d7a278');drawRect(-11,-45,22,7,'#c7c9d7');drawRect(-6,-36,5,4,'#352d51');drawRect(3,-36,5,4,'#352d51');drawRect(-9,-4,7,7,'#242d48');drawRect(3,-4,7,7,'#242d48');
- if(mood==='panic'){drawRect(-20,-39,6,19,'#d9d8e8');drawRect(14,-39,6,19,'#d9d8e8');drawRect(-20,-43,6,5,'#d7a278');drawRect(14,-43,6,5,'#d7a278');drawRect(-3,-30,7,5,'#563a51');}
+ if(mood==='panic'){for(const side of [-1,1]){ctx.save();ctx.translate(side*14,-25);ctx.rotate(side*(ambientReduced?.3:.65+Math.sin(cinematicTime*.3)*.35));drawRect(side<0?-6:0,-17,6,19,'#d9d8e8');drawRect(side<0?-6:0,-22,6,6,'#d7a278');ctx.restore();}drawRect(-3,-30,7,5,'#563a51');}
  else{drawRect(12,-25-(talking?motion:0),5,16,'#d9d8e8');drawRect(-18,-23,6,14,'#d9d8e8');drawRect(-4,-30,8,talking&&motion>0?4:2,'#563a51');}
  if(mood!=='calm'){ctx.strokeStyle='#352d51';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-8,-39);ctx.lineTo(-1,-37);ctx.moveTo(2,-37);ctx.lineTo(9,-40);ctx.stroke();}ctx.restore();
 }
