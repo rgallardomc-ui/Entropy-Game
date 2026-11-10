@@ -208,6 +208,30 @@
 @media(max-width:650px) and (orientation:portrait){.rhythm-mode #hudPower{font-size:10px}.rhythm-mode #guidanceDock{height:48px}.rhythm-pad{min-height:76px;font-size:23px}.rhythm-pad small{font-size:10px}.rhythm-mode #aimHint{font-size:10px;margin:0 8px 4px}}
 @media(max-height:500px) and (orientation:landscape){.rhythm-mode #guidanceDock{height:35px}.rhythm-pad{min-height:43px;font-size:18px}.rhythm-pad small{font-size:9px}.rhythm-actions{margin-top:4px}.rhythm-actions button{min-height:28px}}
 </style>
+<style>
+/* Short, character-led reactions; the world and controller keep their own space. */
+.field-layout #speech[data-reaction="flustered"]{border-color:#b65e72;background:#fff0e4;border-radius:12px 12px 12px 3px}
+#speech[data-reaction="flustered"] #speechSpeaker::after{content:'  !';color:#b24559;font-size:16px}
+#speech[data-reaction="flustered"] #speechFace{position:relative}
+#speech[data-reaction="flustered"] #speechFace::after{content:'!';position:absolute;right:-2px;top:-3px;color:#b24559;font:bold 19px monospace;transform:rotate(12deg)}
+#speech[data-reaction="flustered"].line-enter #speechBody{animation:aaronsBubble .48s ease-out}
+#speech[data-reaction="flustered"] #speechFace.speaker-enter{animation:aaronsHuff .6s ease-out}
+#speech[data-reaction="quip"].line-enter #speechBody{animation:pipQuip .4s ease-out}
+@keyframes aaronsBubble{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-1px)}}
+@keyframes aaronsHuff{0%{transform:translateY(5px) rotate(-5deg)}45%{transform:translateY(-2px) rotate(4deg)}100%{transform:translateY(0) rotate(0)}}
+@keyframes pipQuip{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+#speech[data-still="true"] #speechBody,#speech[data-still="true"] #speechFace{animation:none!important}
+@media(prefers-reduced-motion:reduce){#speech #speechBody,#speech #speechFace{animation:none!important}}
+</style>
+<style>
+@media(max-width:355px) and (orientation:portrait){
+ .field-layout #controls{padding-left:6px;padding-right:6px}
+ .field-layout .dpad,.field-layout .action-pad{grid-template-columns:repeat(3,40px)}
+ .field-layout .touch-btn{width:40px}
+ .field-layout .controller-meta{width:50px}
+ .field-layout .controller-meta button{font-size:8px;padding:5px 2px}
+}
+</style>
 </head>
 <body>
 <div id="shell"><div id="gameFrame">
@@ -230,7 +254,7 @@
 </div>
 <div id="controls" class="hidden" aria-label="Game controller"><div class="dpad"><button class="touch-btn up" data-control="up" aria-label="Aim up">▲</button><button class="touch-btn left" data-control="left" aria-label="Move left">◀</button><div class="center" id="aimReadout">0°</div><button class="touch-btn right" data-control="right" aria-label="Move right">▶</button><button class="touch-btn down" data-control="down" aria-label="Aim down">▼</button></div><div class="controller-meta"><button id="toolBtn" aria-label="Switch shot type">HEAT q</button><button id="gearBtn" aria-label="Explain or choose a power">Y? POWER INFO</button><div id="contextHint"></div></div><div class="action-pad"><button class="touch-btn power" data-control="power" id="powerControl" aria-label="Activate suit power">Y<small id="powerLabel">MAGNET</small></button><button class="touch-btn act" data-control="act" aria-label="Use nearby object">X<small id="actLabel">USE</small></button><button class="touch-btn fire" data-control="fire" aria-label="Fire or throw">B<small id="fireLabel">SHOOT</small></button><button class="touch-btn jump" data-control="jump" aria-label="Jump">A<small id="jumpLabel">JUMP</small></button></div></div>
 <div id="aimHint" class="hidden">↑ ↓ AIM · SPACE JUMP · J FIRE · E ACT · F POWER</div>
-</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v5.3</span>
+</div><div id="saveNotice" class="hidden" role="status"></div><span class="version-chip">v5.4</span>
 </div></div>
 <script>
 
@@ -247,7 +271,7 @@ const levels=[
 {title:'THE HEART OF THE UNIVERSE',world:'The Final Core',badge:'🌌',suit:'#ead8ff',sky:'#30224f',hill:'#634f8d',accent:'#dcc0ff',topic:'All Laws · State Functions · Spontaneity',task:'Restore the three core modules in order, then reach the portal.',intro:[['PIP','We made it, Flux! The heart of the universe is right here.'],['FLUX','Three broken modules. One final chance.'],['PIP','Energy, entropy, and free energy... everything we learned will help us fix this!']],end:'You restored the Core by conserving energy, respecting the natural direction of heat flow, and finding favorable conditions for a reaction. Thermodynamics helps predict which changes are possible and which direction is favored—not necessarily how fast they occur.',upgrade:'Master of thermodynamics',science:'Final synthesis: First, Second, and Third Laws; q and w; state functions; spontaneity and ΔG = ΔH − TΔS.'}
 ];
 
-const VERSION='5.3',INSTRUCTIONS_VERSION='3.1';
+const VERSION='5.4',INSTRUCTIONS_VERSION='3.1';
 const STORAGE='entropy-quest-save-v1';
 const powers=[
  {id:'magnet',name:'ENERGY MAGNET',icon:'✦',color:'#fbd277',help:'Pulls nearby loose sparks and supply crystals toward you for 7 seconds.',lesson:'The magnet moves supplies; it does not create energy.'},
@@ -325,10 +349,10 @@ const progress={};for(const key of ['unlocked','current','completed','xp','gear'
  for(const key of ['unlocked','current','completed','xp','gear','runs','lensUnlocked','mountainStar','shiftLog'])save[key]=next[key]??(key==='mountainStar'?false:key==='shiftLog'?{}:freshSave()[key]);
  save.character=id;save.characterChosen=true;save.campaigns=campaigns;level=save.current;equipped=Math.min(save.gear,availablePowerIndex());powerTime=0;powerCooldown=0;stage={};player={};activeRun=false;dialogue=null;clearControls();store();showMenu();
 }
-function characterDialogue(lines){return lines.map(([speaker,text,scene])=>{
+function characterDialogue(lines){return lines.map(([speaker,text,scene,reaction])=>{
  const hero=speaker.startsWith('FLUX');
  const voiced=text===lensOpening[0][1]?character().origin:hero?(heroVoices[save.character]?.[text]||text):text;
- return [hero?character().speaker+(speaker.includes('THOUGHT')?' · THOUGHT':''):speaker,voiced.replace(/\b(?:Dr\. )?Flux\b/g,character().name),scene];
+ return [hero?character().speaker+(speaker.includes('THOUGHT')?' · THOUGHT':''):speaker,voiced.replace(/\b(?:Dr\. )?Flux\b/g,character().name),scene,reaction];
 });}
 function positionGuidance(){
  const frame=$('gameFrame'),view=$('worldView'),field=screen==='play'||screen==='prologue';
@@ -538,7 +562,8 @@ function speakerPortrait(name){
 }
 function say(lines,onEnd){clearControls();$('tutorialTip').classList.add('hidden');$('speechFace').dataset.speakerKey='';$('speech').dataset.lineKey='';dialogueTimer=0;dialogue={lines:characterDialogue(lines),index:0,shown:0,onEnd:onEnd||null};$('speech').classList.remove('hidden');renderSpeech();}
 function coloredSpeech(text){const safe=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');return safe.replace(/\b(heat|warm|cool|hot|cooler|hotter|energy|magnet|shield|work|push|reaction|conditions|temperature)\b/gi,word=>'<mark class="speech-key '+(/energy|magnet|shield/i.test(word)?'energy':/work|push/i.test(word)?'work':'')+'">'+word+'</mark>');}
-function renderSpeech(){if(!dialogue)return;positionGuidance();const [name,text]=dialogue.lines[dialogue.index],face=$('speechFace'),card=$('speech'),lineKey=name+':'+dialogue.index+':'+text;
+function renderSpeech(){if(!dialogue)return;positionGuidance();const [name,text,,reaction]=dialogue.lines[dialogue.index],face=$('speechFace'),card=$('speech'),lineKey=name+':'+dialogue.index+':'+text;
+ card.dataset.reaction=reaction||'';card.dataset.still=ambientReduced||save.ambient===false?'true':'false';
  const voice=name==='PIP'?'pip':name.includes('AARONS')?'professor':name==='DR. VALE'?'vale':'hero';card.dataset.voice=voice;
  if(card.dataset.lineKey!==lineKey){card.dataset.lineKey=lineKey;card.dataset.shot=String((dialogue.index+(voice==='vale'?2:voice==='professor'?1:0))%3);card.classList.remove('line-enter');void card.offsetWidth;card.classList.add('line-enter');}
  $('speechSpeaker').textContent=name;if(face.dataset.speakerKey!==name){face.innerHTML=speakerPortrait(name);face.dataset.speakerKey=name;face.classList.remove('speaker-enter');void face.offsetWidth;face.classList.add('speaker-enter');if(name==='PIP')pipEntrance=0;}face.dataset.talking=dialogue.shown<text.length?'true':'false';const shown=text.slice(0,Math.floor(dialogue.shown));$('speechText').textContent=shown;$('speechText').innerHTML=coloredSpeech(shown);$('speechNext').textContent=dialogue.shown<text.length?'TAP TO REVEAL ▾':'TAP TO CONTINUE ▾';}
@@ -660,7 +685,7 @@ function rotatePipe(mask,n=1){while(n--)mask=((mask<<1)&15)|(mask>>3);return mas
 function circuitConnected(){let x=0,y=0,entry=8,visited=new Set();for(let n=0;n<10;n++){const i=y*3+x,m=stage.circuit[i];if(!(m&entry)||visited.has(i))return false;visited.add(i);const exits=[1,2,4,8].filter(b=>b!==entry&&(m&b));if(exits.length!==1)return false;const out=exits[0];if(x===2&&y===0&&out===2)return true;const dx=out===2?1:out===8?-1:0,dy=out===4?1:out===1?-1:0;x+=dx;y+=dy;if(x<0||x>2||y<0||y>2)return false;entry=out===1?4:out===2?8:out===4?1:2;}return false;}
 function refund(p){if(p.resource&&!p.refunded){stage[p.resource]++;p.refunded=true;}player.charge=Math.min(8,player.charge+1);}
 function receiverHit(p){if(valeBattle())return hitVale(p);if(level===0){for(const t of [{x:735,y:415,kind:'heat',key:'q',need:2},{x:780,y:330,kind:'work',key:'w',need:1}])if(stage[t.key]<t.need&&Math.hypot(p.x-t.x,p.y-t.y)<41){p.settled=true;if(p.kind!==t.kind){refund(p);teachingRetry('tool',`This target takes ${t.kind==='heat'?'WARM':'PUSH'} shots. Switch with the middle button. Spark returned!`);}else{stage[t.key]++;stage.done=stage.q===2&&stage.w===1;milestone(stage.done?'GATE POWERED! You sent warmth and a push. Door open!':`${t.kind==='heat'?'WARM':'PUSH'} hit! ${stage[t.key]}/${t.need} for this target.`);}return true;}}
- if(level===2){const ts=[{x:460,y:416,t:300},{x:625,y:324,t:350},{x:785,y:416,t:420}];for(let i=0;i<3;i++){const t=ts[i];if(!stage.receivers[i]&&Math.hypot(p.x-t.x,p.y-t.y)<41){p.settled=true;if(t.t>=360){refund(p);teachingRetry('heat','Already hotter. Aim at a cooler BLUE receiver.');}else if(stage.receivers[i])refund(p);else{stage.receivers[i]=true;stage.done=stage.receivers[0]&&stage.receivers[1];milestone('BLUE RECEIVER LIT! Warmth spread from hotter to cooler.');}return true;}}}
+ if(level===2){const ts=[{x:460,y:416,t:300},{x:625,y:324,t:350},{x:785,y:416,t:420}];for(let i=0;i<3;i++){const t=ts[i];if(!stage.receivers[i]&&Math.hypot(p.x-t.x,p.y-t.y)<41){p.settled=true;if(t.t>=360){refund(p);if(!stage.cameosSeen?.heat)stage.cameoPending='heat';teachingRetry('heat','Already hotter. Aim at a cooler BLUE receiver.');}else if(stage.receivers[i])refund(p);else{stage.receivers[i]=true;stage.done=stage.receivers[0]&&stage.receivers[1];milestone('BLUE RECEIVER LIT! Warmth spread from hotter to cooler.');}return true;}}}
  if(level===5&&p.kind==='reagent'){for(let i=0;i<2;i++){const r=stage.reactors[i],need=i?1:2;if(r.done||r.loaded>=need)continue;if(Math.hypot(p.x-[520,760][i],p.y-395)<41){p.settled=true;if(gibbs(i)>=0){refund(p);teachingRetry('seed',`Use SETUP first: machine ${i?'B likes COOL':'A likes WARM'}. Seed returned!`);}else{r.loaded++;milestone(r.loaded===need?`Machine ${i?'B':'A'}: seeds complete! Growing now. Y HURRY makes it faster.`:`Machine A: ${r.loaded}/2 seeds. Aim one more into its target.`);}return true;}}}
  if(level===6){if(stage.finalStep===0&&Math.hypot(p.x-420,p.y-409)<41){p.settled=true;stage.q++;if(stage.q>=3){stage.finalStep=1;milestone('ENERGY READY! Next, aim at the blue heat receiver.');}else milestone(`SPARK DELIVERED! ${stage.q}/3 for the heart.`);return true;}if(stage.finalStep===1){for(const t of [{x:595,y:409,t:300},{x:635,y:315,t:420}])if(Math.hypot(p.x-t.x,p.y-t.y)<41){p.settled=true;if(t.t<360){stage.finalStep=2;milestone('BLUE RECEIVER LIT! Next, use SETUP at the final machine.');}else{refund(p);teachingRetry('heat','Too hot! Aim at the cooler BLUE receiver.');}return true;}}if(stage.finalStep===2&&Math.hypot(p.x-745,p.y-393)<41){p.settled=true;if(30-stage.coreT*.12>=0){refund(p);toast('Use X SETUP near the final machine, then choose WARM.');}else if(!stage.coreLoaded){stage.coreLoaded=true;milestone('SEED LOADED! The heart is waking up. Y HURRY helps.');}else refund(p);return true;}}
  return false;}
@@ -923,7 +948,7 @@ function stepPlayer(){
 function stepProjectiles(){const alive=[];for(const p of projectiles){p.x+=p.vx;p.y+=p.vy;p.life--;if(p.kind==='wedge')p.vy+=.24;let hit=receiverHit(p);if(!hit){for(const e of enemies){if(Math.hypot(p.x-e.x,p.y-e.y)<25){e.stun=p.kind==='ice'?270:160;refund(p);burst(e.x,e.y,'#9fe7e1',9);hit=true;toast('DRONE STUNNED! Run past while it is asleep.');break;}}}if(!hit&&p.kind==='wedge'&&p.y>=floorAt(p.x)){if(level===4&&Math.abs(p.x-stage.boulder)<75){stage.anchored=true;milestone('WEDGE SET · Rest, recover, then keep pushing.');}else toast('Aim the curved line at the rock’s bottom, then THROW.');hit=true;}if(!hit&&(p.life<=0||p.x<0||p.x>960||p.y<30||p.y>580)){refund(p);hit=true;}if(!hit)alive.push(p);}projectiles=alive;}
 function stepEnemies(){for(const e of enemies){e.y=floorAt(e.x)-(level===3?90:28);if(e.stun>0){e.stun--;continue;}if(level===4){e.warning=(ticks+(e.min===645?0:90))%180<(save.character==='professor'?30:save.character==='student'?65:50);const sweep=(ticks+(e.min===645?0:90))%180;if(sweep>=(save.character==='professor'?30:save.character==='student'?65:50)&&sweep<110)e.x+=e.dir*1.8*character().speed;}else e.x+=e.dir*(level===6?1.5:1.1)*character().speed;if(e.x>e.max||e.x<e.min)e.dir*=-1;if(Math.abs(player.x-e.x)<29&&Math.abs(player.y-18-e.y)<29)hitPlayer('Drone bumped you');}if(level===2||level===6&&!stage.boss){for(const x of (level===2?[350,705]:[510])){const active=ventActive(x);if(active&&Math.abs(player.x-x)<24&&player.y>floorAt(player.x)-95)hitPlayer('Hot vent');}}}
 function stepEffects(){for(const p of particles){p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.life--;}particles=particles.filter(p=>p.life>0);if(toastTimer>0&&--toastTimer===0)$('toast').classList.add('hidden');if(ticks%8===0)updateHUD();if(ticks%180===0)persistRun();}
-function stepGame(){updateRunnerTurnButtons();ticks++;if(stage.ascent){stepAscent();stepEffects();return;}if(stage.preview){stepSciencePreview();return;}if(arcadeSession&&stage.shift?.mode==='active')arcadeSession.frames++;if(lessonFocus){stepLearningMoment();return;}if(stage.shift){stepWorldShift();stepEffects();return;}if(thermoFinale()){stepThermoFinale();stepEffects();return;}if(stage.labDemo){stepLabPreparation();stepEffects();return;}if(valeBattle()&&stage.boss.transition){stepValeTransition();stepEffects();return;}if(shotTimer>0)shotTimer--;if(powerTime>0)powerTime--;if(powerCooldown>0)powerCooldown--;if(controls.fire)shoot();stepPlayer();if(screen!=='play')return;if(maybeWorldShift()){stepEffects();return;}stepEnemies();stepProjectiles();stepReactions();stepVale();stepEffects();}
+function stepGame(){if(dialogue||maybeProfessorCameo())return;updateRunnerTurnButtons();ticks++;if(stage.ascent){stepAscent();stepEffects();return;}if(stage.preview){stepSciencePreview();return;}if(arcadeSession&&stage.shift?.mode==='active')arcadeSession.frames++;if(lessonFocus){stepLearningMoment();return;}if(stage.shift){stepWorldShift();stepEffects();return;}if(thermoFinale()){stepThermoFinale();stepEffects();return;}if(stage.labDemo){stepLabPreparation();stepEffects();return;}if(valeBattle()&&stage.boss.transition){stepValeTransition();stepEffects();return;}if(shotTimer>0)shotTimer--;if(powerTime>0)powerTime--;if(powerCooldown>0)powerCooldown--;if(controls.fire)shoot();stepPlayer();if(screen!=='play')return;if(maybeWorldShift()){stepEffects();return;}stepEnemies();stepProjectiles();stepReactions();stepVale();stepEffects();}
 
 // Three short, original instability pockets. State lives in the normal saved
 // stage, while the platforming body, health, supplies and timers remain frozen.
@@ -1285,7 +1310,7 @@ function drawLearningMoment(){const f=lessonFocus;if(!f)return;const c=learningC
   drawTinyFlux(x,492,'#c6b3ef',2.9,1,'professor',true);drawRect(x-78,316,156,34,'#ffe49c');drawText('BECAUSE…',x,340,20,'#27324b');drawText('PROF. AARONS',x,365,12,'#f8d793');drawBriefLines(f.quip||professorAsides[level],565,459,660,16);
  }
  drawText('TAP TO CONTINUE · OR WATCH',565,517,13,'#c6d8ea');ctx.restore();}
-function animate(t){requestAnimationFrame(animate);updateRunnerTurnButtons();pollGamepad();const dt=Math.min(100,Math.max(0,t-last));last=t;advanceAmbient(dt);if(screen==='opening'&&!document.hidden)stepOpening(dt);if(!document.hidden)pipEntrance=Math.min(1,pipEntrance+dt/700);cinematicTime+=dt/16.67*(thermoFinale()?.mode==='memory'?.25:1);if(screen==='play'&&stage.lensReveal>0)stage.lensReveal=Math.max(0,stage.lensReveal-dt*.04);if(screen==='play'&&!dialogue&&!document.hidden){accumulator+=dt;while(accumulator>=1000/60){stepGame();accumulator-=1000/60;if(screen!=='play')break;}}else accumulator=0;if(screen==='circuit'&&!document.hidden&&powerCooldown>0)powerCooldown=Math.max(0,powerCooldown-dt*60/1000);if(screen==='play')drawGame();else{ticks++;drawMenuBackdrop();}if(dialogue&&screen==='play'&&dt>0){const text=dialogue.lines[dialogue.index][1];dialogueTimer+=dt;if(dialogue.shown<text.length&&dialogueTimer>=24){dialogue.shown=Math.min(text.length,dialogue.shown+Math.floor(dialogueTimer/24));dialogueTimer=0;renderSpeech();}}}
+function animate(t){requestAnimationFrame(animate);updateRunnerTurnButtons();pollGamepad();const dt=Math.min(100,Math.max(0,t-last));last=t;advanceAmbient(dt);if(screen==='opening'&&!document.hidden)stepOpening(dt);if(!document.hidden)pipEntrance=Math.min(1,pipEntrance+dt/700);cinematicTime+=dt/16.67*(thermoFinale()?.mode==='memory'?.25:1);if(screen==='play'&&stage.lensReveal>0)stage.lensReveal=Math.max(0,stage.lensReveal-dt*.04);if(screen==='play'&&!dialogue&&!document.hidden){accumulator+=dt;while(accumulator>=1000/60){stepGame();accumulator-=1000/60;if(screen!=='play'||dialogue){accumulator=0;break;}}}else accumulator=0;if(screen==='circuit'&&!document.hidden&&powerCooldown>0)powerCooldown=Math.max(0,powerCooldown-dt*60/1000);if(screen==='play')drawGame();else{ticks++;drawMenuBackdrop();}if(dialogue&&screen==='play'&&dt>0){const text=dialogue.lines[dialogue.index][1];dialogueTimer+=dt;if(dialogue.shown<text.length&&dialogueTimer>=24){dialogue.shown=Math.min(text.length,dialogue.shown+Math.floor(dialogueTimer/24));dialogueTimer=0;renderSpeech();}}}
 $('overlay').addEventListener('click',e=>{const b=e.target.closest('[data-act],[data-level],[data-gear],[data-pipe],[data-temp],[data-bind],[data-character],[data-prologue-character],[data-arcade]');if(!b||b.disabled)return;if(b.dataset.act==='menuSound'){handleMenuMusic(b.dataset.menuMusic);return;}unlockAudio().then(()=>beep(500,.06));if(b.hasAttribute('data-arcade')){startArcade(Number(b.dataset.arcade));return;}if(b.hasAttribute('data-prologue-character')){choosePrologueHero(b.dataset.prologueCharacter);return;}if(b.hasAttribute('data-character')){selectCharacter(b.dataset.character);return;}if(b.hasAttribute('data-bind')){pendingBinding=b.dataset.bind;showBindings();return;}if(b.hasAttribute('data-level')){if(!save.characterChosen&&!Object.keys(save.runs).length&&!save.completed.length)beginClassroomPrologue('start');else startLevel(Number(b.dataset.level));return;}if(b.hasAttribute('data-gear')){if(equipped!==Number(b.dataset.gear))powerTime=0;equipped=Number(b.dataset.gear);save.gear=equipped;if(stage.initialized)persistRun();else store();b.dataset.return==='resume'?resumeGame():showMenu();return;}if(b.hasAttribute('data-pipe')){const i=Number(b.dataset.pipe);stage.circuit[i]=rotatePipe(stage.circuit[i]);persistRun();if(circuitConnected())testCircuit();else showCircuit();return;}if(b.hasAttribute('data-temp')){chooseTemperature(Number(b.dataset.temp));return;}switch(b.dataset.act){case 'introNext':finishOpening();break;case 'arcade':showArcade();break;case 'routeGentle':chooseRouteExperiment(false);break;case 'routeRough':chooseRouteExperiment(true);break;case 'narration':save.narration=save.narration===false;stopRuleVoice();store();showSettings();break;case 'help':showHelp();break;case 'bindings':showBindings();break;case 'defaultKeys':save.keys={};pendingBinding=null;store();showBindings();break;case 'storyIntro':beginClassroomPrologue('switch');break;case 'storyNext':showStoryIntro(storyPage+1);break;case 'classroomNext':advanceClassroomPrologue();break;case 'characters':showCharacters();break;case 'continue':continueGame();break;case 'new':beginClassroomPrologue('new');break;case 'menu':showMenu();break;case 'map':showMap();break;case 'settings':showSettings();break;case 'about':showAbout();break;case 'journal':showJournal();break;case 'gear':showGear();break;case 'resume':resumeGame();break;case 'sound':toggleSound();showSettings();break;case 'music':save.music=!save.music;store();if(save.music)unlockAudio();else stopAudioNotes();updateSoundLabel();showSettings();break;case 'ambient':save.ambient=save.ambient===false;store();showSettings();break;case 'controller':save.controller=!save.controller;store();showSettings();break;case 'testSound':save.sound=true;store();unlockAudio(true,true).then(()=>{tone(523,.22,'triangle',.12);tone(659,.22,'triangle',.12,.22);tone(784,.3,'triangle',.12,.44);const status=$('audioStatus');if(status)status.textContent=audioCtx?.state==='running'?'♪ Sound test played. If silent, check device volume and silent mode.':'Tap TEST SOUND again to start audio.';});break;case 'next':startNextWorld();break;case 'testCircuit':testCircuit();break;case 'circuitPower':activatePower();break;case 'reset':if(confirm('Erase this browser’s progress?')){save=freshSave();stage={};store();showSettings();}break;}});
 $('pauseBtn').addEventListener('click',pauseGame);$('journalBtn').addEventListener('click',showJournal);$('soundBtn').addEventListener('click',handleAudioButton);$('gearBtn').addEventListener('click',showGear);$('toolBtn').addEventListener('click',toggleTool);$('speech').addEventListener('click',advanceSpeech);
 const keyMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'up',ArrowDown:'down',Space:'jump',KeyW:'jump',KeyJ:'fire',KeyE:'act',KeyF:'power'};
@@ -1935,7 +1960,7 @@ function openingCamera(time){if(ambientReduced)return {x:0,y:0,z:.82,yaw:0};cons
 function drawOpening(){const t=opening?.time||0,c=openingCamera(t);drawRect(0,0,960,540,'#060c21');drawStars(ambientReduced?0:t/14);for(let n=0;n<24;n++){const x=((n*157-c.x*.14)%1100+1100)%1100-70,y=40+(n*59)%310;filmOrb(x,y,n%5===0?3:1.5,n%2?'#8beee4':'#ffe49c');}ctx.save();ctx.translate(480,230);ctx.rotate(c.yaw*.06);ctx.scale(c.z,c.z);ctx.translate(-c.x*.55,-c.y);for(let n=0;n<4;n++){ctx.save();ctx.translate(0,70);ctx.rotate(ambientReduced?n*.5:t/3400+n*.65);ctx.strokeStyle=['#ffe49c','#8beee4','#bda9ef','#ffb47d'][n];ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(0,0,250+n*29,80+n*16,0,0,Math.PI*2);ctx.stroke();ctx.restore();}filmOrb(0,70,50,'#ffe49c');for(let n=0;n<3;n++){const w=1000-n*180;drawRect(-w/2,210-n*28,w,23,'#243951');drawRect(-w/2,210-n*28,w,3,n%2?'#8beee4':'#ffe49c');}for(const side of [-1,1]){const x=side*380;drawRect(x-22,-22,44,230,'#294460');drawRect(x-28,-34,56,16,'#ffe49c');for(let n=0;n<7;n++)drawRect(x-15,n*26,30,4,'#8beee4');ctx.save();ctx.globalAlpha=.17;ctx.fillStyle=side<0?'#8beee4':'#ffe49c';ctx.beginPath();ctx.moveTo(x,-35);ctx.lineTo(x+side*160,-360);ctx.lineTo(x-side*70,-360);ctx.closePath();ctx.fill();ctx.restore();}ctx.save();ctx.scale(Math.max(.65,Math.cos(c.yaw)),1);drawText('ENTROPY QUEST',3,-100,49,'#73566b');drawText('ENTROPY QUEST',0,-104,49,'#ffe49c');drawText('THE OFFICIAL GAME · ADVENTURE EDITION',0,-63,16,'#8beee4');ctx.restore();drawText(t<18000?'SCIENCE OPENS THE WAY':'YOUR ADVENTURE STARTS NOW',0,190,21,'#e5d5ff');ctx.restore();drawRect(0,0,960,18,'#03091a');drawRect(0,522,960,18,'#03091a');}
 
 function beginAscent(){
- if(level!==4||stage.done||stage.ascent||!actionContext().ready)return false;clearControls();projectiles.forEach(refund);projectiles=[];
+ if(level!==4||stage.done||stage.ascent||!actionContext().ready)return false;if(showProfessorCameo('boulder',beginAscent))return true;clearControls();projectiles.forEach(refund);projectiles=[];
  const height=Math.max(0,Math.min(1,(stage.boulder-475)/315)),rest=Math.max(0,(stage.boulderRest-475)/315);
  stage.ascent={mode:'entering',clock:0,schema:3,time:height*3600,rest:rest*3600,x:0,vx:0,depth:0,vz:0,integrity:character().hearts,hitGrace:0,shotWait:0,boost:0,nextSpawn:height*3600+180,nextPickup:height*3600+350,pickupStep:0,weapon:1,pips:0,rapid:0,shield:0,objects:[],shots:[],fx:[],heat:height*2};
  stage.routeLesson=true;persistRun();updateHUD();return true;
@@ -2037,6 +2062,64 @@ function drawAscentView(){
 }
 function drawAscentObject(o){const p=ascentProject(o.x,o.z),scale=p.scale;if(o.kind==='pickup'){const c={wing:'#8beee4',pip:'#ffe49c',rapid:'#dda4f4',shield:'#a7f5b4'}[o.power],r=16*scale;ctx.strokeStyle=c;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x,p.y-r);ctx.lineTo(p.x+r,p.y);ctx.lineTo(p.x,p.y+r);ctx.lineTo(p.x-r,p.y);ctx.closePath();ctx.stroke();if(o.z<.65)drawText(o.power==='wing'?'GUN +1':o.power==='pip'?'PIP +1':o.power.toUpperCase(),p.x,p.y-r-10,12,c);return;}if(o.kind==='bolt'){filmOrb(p.x,p.y,7*scale,'#ff9477');return;}if(o.kind==='rock'){const r=(o.size===3?43:o.size===2?29:18)*scale;ctx.fillStyle=o.size===3?'#a38b76':'#c2a995';ctx.strokeStyle='#f6c895';ctx.lineWidth=2;ctx.beginPath();for(let n=0;n<9;n++){const angle=n*Math.PI*2/9,rad=r*(n%2?.78:1),x=p.x+Math.cos(angle)*rad,y=p.y+Math.sin(angle)*rad;n?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();ctx.stroke();drawRect(p.x-r*.25,p.y-r*.3,r*.36,r*.3,'#6a6261');return;}const r=(o.kind==='gunship'?48:36)*scale,c=o.warning&&!o.fired?'#ffb47d':'#9fcfe2';drawRect(p.x-r,p.y-r*.55,r*2,r*1.05,'#405571');drawRect(p.x-r*.6,p.y-r*.8,r*1.2,r*.75,c);drawRect(p.x-r*1.35,p.y-r*.15,r*.55,r*.45,'#cbd3d6');drawRect(p.x+r*.8,p.y-r*.15,r*.55,r*.45,'#cbd3d6');filmOrb(p.x,p.y-r*.2,8*scale,'#8beee4');if(o.warning&&!o.fired){ctx.strokeStyle='#ffb47d';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y);const end=ascentProject(o.x,.03);ctx.lineTo(end.x,end.y);ctx.stroke();}}
 function drawAscentBoss(){const b=stage.ascent.boss,p=ascentProject(b.x,b.z),r=105*p.scale,hot=b.hp<b.max*.45;drawRect(p.x-r*1.45,p.y-r*.5,r*2.9,r*.75,'#3e405f');drawRect(p.x-r*.8,p.y-r*.9,r*1.6,r*1.5,hot?'#925969':'#526386');for(const side of [-1,1]){drawRect(p.x+side*r*1.15-r*.2,p.y-r*.7,r*.4,r*1.4,'#a6bdcf');drawRect(p.x+side*r*1.15-r*.1,p.y+r*.55,r*.2,r*.24,'#ffb47d');}filmOrb(p.x,p.y-r*.15,r*.32,ascentBossOpen()?(hot?'#ffe49c':'#8beee4'):'#687c9e');if(!ascentBossOpen()){ctx.strokeStyle='#a8bddd';ctx.lineWidth=4;ctx.beginPath();ctx.arc(p.x,p.y-r*.15,r*.44,0,Math.PI*2);ctx.stroke();}ctx.strokeStyle='#ffcf79';ctx.lineWidth=3;ctx.strokeRect(350,202,260,8);drawRect(350,202,260*Math.max(0,b.hp/b.max),8,hot?'#ff9477':'#8beee4');if(b.warning>0){for(const d of hot?[-.27,0,.27]:[-.15,.15]){const end=ascentProject(b.aim+d,.025);ctx.strokeStyle='#ff9477';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(end.x,end.y);ctx.stroke();}drawText('VOLLEY INCOMING · DODGE',480,186,17,'#ffcf79');}}
+
+
+// One optional exchange per world/run, stored inside the existing campaign save.
+// Dialogue freezes hazards and timers. No cameos interrupt an arcade or boss fight.
+const professorCameos={
+ spark:{world:0,lines:[
+  ['PROFESSOR AARONS','The gate gets heat AND work. Apparently one form of payment was too convenient.'],
+  ['PIP','Two locks. One very demanding door.']
+ ]},
+ battery:{world:1,lines:[
+  ['PROFESSOR AARONS','Vale says the battery energy disappeared? Show me his calculations. Motion and warmth both count.','flustered'],
+  ['PIP','Checking his pockets for missing joules.']
+ ]},
+ heat:{world:2,lines:[
+  ['PROFESSOR AARONS','Hold up, my Jamaican is about to come out!','flustered'],
+  ['PROFESSOR AARONS','360 K to 420 K goes cooler to hotter. That needs a heat pump supplied with work. This shot provides none.'],
+  ['PIP','Heat needs a paid ride uphill. Try the cooler 300 K or 350 K receivers!']
+ ]},
+ zero:{world:3,lines:[
+  ['PROFESSOR AARONS','160 K. Closer to absolute zero, yes. At zero, no. Please do not round away the Third Law.','flustered'],
+  ['PIP','Putting my very optimistic calculator away.']
+ ]},
+ boulder:{world:4,lines:[
+  ['PROFESSOR AARONS','Sisyphus? Again? Of all the thermodynamics illustrations, we got the same man and his rock.','flustered'],
+  ['PIP','I asked for a fresh example. They sent a slightly larger rock.'],
+  ['PROFESSOR AARONS','Lifting stores gravitational potential energy; friction warms things too. This hill is an analogy, not ΔG.']
+ ]},
+ catalyst:{world:5,lines:[
+  ['PROFESSOR AARONS','A catalyst speeds the approach to equilibrium. It changes neither ΔG nor the equilibrium constant.'],
+  ['PIP','I tried yelling “react faster.” Apparently I am not a catalyst.']
+ ]},
+ finale:{world:6,lines:[
+  ['PROFESSOR AARONS','Vale built a whole fortress and still needs an energy source. All that drama, same First Law.'],
+  ['PIP','Excellent cape. Questionable energy accounting.']
+ ]}
+};
+function showProfessorCameo(key,onEnd){
+ const cameo=professorCameos[key];
+ if(!cameo||cameo.world!==level||stage.cameosSeen?.[key]||screen!=='play'||!activeRun||arcadeSession||dialogue||lessonFocus||stage.preview||stage.shift||stage.ascent||stage.labDemo||stage.boss)return false;
+ stage.cameosSeen={...stage.cameosSeen,[key]:true};
+ if(stage.cameoPending===key)delete stage.cameoPending;
+ $('toast').classList.add('hidden');toastTimer=0;
+ // The portrait is the playable professor herself when her campaign is selected.
+ say(cameo.lines.map(([name,text,mood])=>[name,text,undefined,mood||(name==='PIP'?'quip':'aside')]),onEnd);
+ persistRun();return true;
+}
+function maybeProfessorCameo(){
+ if(screen!=='play'||!activeRun||arcadeSession||dialogue||!stage.initialized||lessonFocus||stage.preview||stage.shift||stage.ascent||stage.labDemo||stage.boss)return false;
+ if(stage.cameoPending)return showProfessorCameo(stage.cameoPending);
+ if(stage.done)return false;
+ if(level===0&&stage.glassesOn&&stage.q>0&&stage.w===0)return showProfessorCameo('spark');
+ if(level===1&&stage.cells>=2&&player.x>620)return showProfessorCameo('battery');
+ if(level===3&&stage.pump===1)return showProfessorCameo('zero');
+ if(level===4&&player.x>340&&player.x<stage.boulder)return showProfessorCameo('boulder');
+ if(level===5&&stage.reactors.some((r,i)=>r.loaded>0&&gibbs(i)<0&&!r.done))return showProfessorCameo('catalyst');
+ if(level===6&&stage.finalStep===1)return showProfessorCameo('finale');
+ return false;
+}
 
 setupInput();showMenu();requestAnimationFrame(animate);
 
